@@ -1,14 +1,14 @@
 CC = gcc
 CFLAGS = -pipe -m64 -Wall -O3 -mfpmath=sse -mtune=generic
 
-BINNAME = swarm
+BINNAME = sdl-flocking
 
-all: swarm
+all: sdl-flocking
 
-swarm:
-	$(CC) main.c boid.c vector.c $(CFLAGS) -lSDL -lSDL_image -lpthread -o $(BINNAME) 
+sdl-flocking:
+	$(CC) main.c boid.c vector.c $(CFLAGS) -lSDL -lSDL_image -o $(BINNAME) 
 
-rebuild: clean swarm
+rebuild: clean sdl-flocking
 
 clean:
 	rm -rf $(BINNAME) *.o

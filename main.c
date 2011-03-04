@@ -3,9 +3,6 @@
 #include <string.h>
 #include <time.h>
 
-#include <pthread.h>
-#include <semaphore.h>
-
 #include <SDL/SDL.h>
 #include <SDL/SDL_image.h>
 

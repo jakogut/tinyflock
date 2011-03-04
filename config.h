@@ -6,10 +6,9 @@
 #define SCREEN_HEIGHT   720
 #define SCREEN_DEPTH    32
 
-#define FPS 50
+#define FPS 80
 
 // BOID parameters
-#define BOID_IMAGE_FILENAME "boid.bmp"
 #define NUM_BOIDS 500
 
 #define MAX_BOID_VELOCITY 10
