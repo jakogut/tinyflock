@@ -8,7 +8,6 @@
 
 typedef struct
 {
-	SDL_Surface* image;
 	SDL_Surface* sprite;
 
 	// Where the boid is on the screen

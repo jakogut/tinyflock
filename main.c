@@ -37,8 +37,6 @@ void update(boid** flock)
 	int i;
 	for(i = 0; i < NUM_BOIDS; i++)
 	{
-		flock[i]->sprite = flock[i]->image;
-
 		// Get our influence vectors
 		separation = flock_separate(flock, flock[i]);
 		alignment = flock_align(flock, flock[i]);

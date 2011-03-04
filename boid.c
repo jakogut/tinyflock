@@ -4,7 +4,6 @@ boid* create_boid(SDL_Surface* image, int loc_x, int loc_y, int vel_x, int vel_y
 {
 	boid* b = malloc(sizeof *b);
 
-	b->image = image;
 	b->sprite = image;
 
 	b->location = create_vector(loc_x, loc_y, 0);
