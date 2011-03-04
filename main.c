@@ -93,7 +93,7 @@ void render(boid** flock, SDL_Surface* screen)
 	SDL_Flip(screen);
 }
 
-int main()
+int main(int argc, char** argv)
 {
 	SDL_Init(SDL_INIT_VIDEO);
 
