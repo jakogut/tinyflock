@@ -1,12 +1,19 @@
 CC = gcc
-CFLAGS = -pipe -m64 -Wall -O3 -mfpmath=sse -mtune=generic
+LD = gcc
+CFLAGS = -pipe -Wall -O3 -mtune=generic
+LDFLAGS = -lSDL_image `pkg-config --libs sdl`
 
 BINNAME = sdl-flocking
 
+OBJECTS = main.o vector.o boid.o
+
 all: sdl-flocking
 
-sdl-flocking:
-	$(CC) main.c boid.c vector.c $(CFLAGS) -lSDL -lSDL_image -o $(BINNAME) 
+sdl-flocking: $(OBJECTS)
+	$(CC) $(OBJECTS) $(LDFLAGS) -o $(BINNAME) 
+
+%.o: %.c
+	$(CC) -c $(CFLAGS) $< -o $@
 
 rebuild: clean sdl-flocking
 
