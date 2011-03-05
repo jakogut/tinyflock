@@ -1,3 +1,4 @@
+#include "config.h"
 #include "boid.h"
 
 boid* create_boid(SDL_Surface* image, int loc_x, int loc_y, int vel_x, int vel_y)

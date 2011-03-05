@@ -1,5 +1,5 @@
-#ifndef CONFIG_H_
-#define CONFIG_H_
+#ifndef FLOCKCONFIG_H_
+#define FLOCKCONFIG_H_
 
 // Video configuration
 #define SCREEN_WIDTH    1280

@@ -1,3 +1,4 @@
+#include "config.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -6,7 +7,7 @@
 #include <SDL/SDL.h>
 #include <SDL/SDL_image.h>
 
-#include "config.h"
+#include "flockconfig.h"
 #include "boid.h"
 
 float rand_range(float min, float max)

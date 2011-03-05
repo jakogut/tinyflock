@@ -1,9 +1,9 @@
 #ifndef BOID_H_
 #define BOID_H_
 
-#include <SDL/SDL.h>
+#include <SDL.h>
 
-#include "config.h"
+#include "flockconfig.h"
 #include "vector.h"
 
 typedef struct
