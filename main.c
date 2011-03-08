@@ -27,41 +27,29 @@ int keyPressed(SDL_Event* event, int key)
 }
 
 // Update the positions of all the boids based on their velocity
-void update(boid** flock)
+void update(boid* flock)
 {
-	vector* separation;
-	vector* alignment;
-	vector* cohesion;
-
-	vector* random;
+	vector influence;
+	vector random;
 
 	int i;
 	for(i = 0; i < NUM_BOIDS; i++)
 	{
 		// Get our influence vectors
-		separation = flock_separate(flock, flock[i]);
-		alignment = flock_align(flock, flock[i]);
-		cohesion = flock_cohere(flock, flock[i]);
-		random = create_randomized_vector(0, 1.3);
+		flock_influence(&influence, flock, &flock[i]);
+		randomize_vector(&random, 0, 1.3);
 
 		// Add our influence vectors to the acceleration vector of the boid
-		vector_add(flock[i]->acceleration, separation);
-		vector_add(flock[i]->acceleration, alignment);
-		vector_add(flock[i]->acceleration, cohesion);
+		vector_add(&flock[i].acceleration, &influence);
 
 		// Add a little random weighting to the acceleration, to make movements more organic
-		vector_mul(flock[i]->acceleration, random);
+		vector_mul(&flock[i].acceleration, &random);
 
-		vector_add(flock[i]->velocity, flock[i]->acceleration);
-		vector_add(flock[i]->location, flock[i]->velocity);
+		vector_add(&flock[i].velocity, &flock[i].acceleration);
+		vector_add(&flock[i].location, &flock[i].velocity);
 
 		// Reset the acceleration vectors for the flock
-		vector_init(flock[i]->acceleration, 0);
-
-		// Clean up our temporary influence vectors
-		destroy_vector(separation);
-		destroy_vector(alignment);
-		destroy_vector(cohesion);
+		init_vector_scalar(&flock[i].acceleration, 0.0);
 	}
 
 	// Limit boid velocity to MAX_BOID_VELOCITY as defined in config.h
@@ -69,7 +57,7 @@ void update(boid** flock)
 }
 
 // Render the boids
-void render(boid** flock, SDL_Surface* screen)
+void render(boid* flock, SDL_Surface* screen)
 {
 	SDL_FillRect(screen, NULL, 0xFFFFFF);
 
@@ -77,18 +65,18 @@ void render(boid** flock, SDL_Surface* screen)
 	for(i = 0; i < NUM_BOIDS; i++)
 	{
 		// If the boid goes off the screen, wrap the location around to the other side
-		if(flock[i]->location->x >= SCREEN_WIDTH) flock[i]->location->x = 0;
-		else if(flock[i]->location->x <= 0) flock[i]->location->x = SCREEN_WIDTH;
+		if(flock[i].location.x >= SCREEN_WIDTH) flock[i].location.x = 0;
+		else if(flock[i].location.x <= 0) flock[i].location.x = SCREEN_WIDTH;
 
-		if(flock[i]->location->y >= SCREEN_HEIGHT) flock[i]->location->y = 0;
-		else if(flock[i]->location->y <= 0) flock[i]->location->x = SCREEN_HEIGHT;
+		if(flock[i].location.y >= SCREEN_HEIGHT) flock[i].location.y = 0;
+		else if(flock[i].location.y <= 0) flock[i].location.x = SCREEN_HEIGHT;
 
 		SDL_Rect offset;
 
-		offset.x = flock[i]->location->x;
-		offset.y = flock[i]->location->y;
+		offset.x = flock[i].location.x;
+		offset.y = flock[i].location.y;
 
-		SDL_BlitSurface(flock[i]->sprite, NULL, screen, &offset);
+		SDL_BlitSurface(flock[i].sprite, NULL, screen, &offset);
 	}
 
 	SDL_Flip(screen);
@@ -108,14 +96,14 @@ int main(int argc, char** argv)
 	SDL_FreeSurface(temp);
 
 	// Create an array of boids
-	boid** flock = malloc(sizeof(boid*) * NUM_BOIDS);
+	boid* flock = malloc(sizeof(boid) * NUM_BOIDS);
 
 	srand(time(NULL));
 
 	int i;
 	for(i = 0; i < NUM_BOIDS; i++)
 	{
-		flock[i] = create_boid(boid_image, rand_range(0, SCREEN_WIDTH), rand_range(0, SCREEN_HEIGHT),
+		init_boid(&flock[i], boid_image, rand_range(0, SCREEN_WIDTH), rand_range(0, SCREEN_HEIGHT),
 					rand_range((0 - MAX_BOID_VELOCITY), MAX_BOID_VELOCITY),
 					rand_range((0 - MAX_BOID_VELOCITY), MAX_BOID_VELOCITY));
 	}
@@ -140,7 +128,7 @@ int main(int argc, char** argv)
 
 	SDL_FreeSurface(boid_image);
 
-	for(i = 0; i < NUM_BOIDS; i++) destroy_boid(flock[i]);
+	free(flock);
 
 	SDL_Quit();
 

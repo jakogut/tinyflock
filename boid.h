@@ -11,29 +11,20 @@ typedef struct
 	SDL_Surface* sprite;
 
 	// Where the boid is on the screen
-	vector* location;
+	vector location;
 
 	// Whether the boid's speed is increasing or decreased, and in what direction
-	vector* acceleration;
+	vector acceleration;
 
 	// What direction the boid is moving in, and at what speed
-	vector* velocity;
+	vector velocity;
 
 } boid;
 
-boid* create_boid(SDL_Surface* image, int loc_x, int loc_y, int vel_x, int vel_y);
+void init_boid(boid* b, SDL_Surface* image, int loc_x, int loc_y, int vel_x, int vel_y);
 
-void destroy_boid(boid* b);
+inline void flock_influence(vector* v, boid* flock, boid* b);
 
-// Avoid crowding flockmates
-vector* flock_separate (boid** flock, boid* b);
-
-// Head in the same average direction as flockmates
-vector* flock_align(boid** flock, boid* b);
-
-// Head towards the average position of flockmates
-vector* flock_cohere(boid** flock, boid* b);
-
-void flock_limit_velocity(boid** flock, int num_boids, float max_velocity);
+inline void flock_limit_velocity(boid* flock, int num_boids, float max_velocity);
 
 #endif

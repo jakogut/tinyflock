@@ -14,10 +14,8 @@ vector* create_vector(float x, float y, float z)
 	return v;
 }
 
-vector* create_randomized_vector(float min, float max)
+void randomize_vector(vector* v, float min, float max)
 {
-	vector* v = malloc(sizeof(vector));
-
 	float range = max - min;
 
 	v->x = (rand() / (float)RAND_MAX) * range;
@@ -28,19 +26,13 @@ vector* create_randomized_vector(float min, float max)
 
 	v->z = (rand() / (float)RAND_MAX) * range;
 	v->z += min;
-
-	return v;
 }
 
-vector* copy_vector(vector* init)
+void copy_vector(vector* dest, vector* src)
 {
-	vector* v = malloc(sizeof(vector));
-
-	v->x = init->x;
-	v->y = init->y;
-	v->z = init->z;
-
-	return v;
+	dest->x = src->x;
+	dest->y = src->y;
+	dest->z = src->z;
 }
 
 void destroy_vector(vector* v)
@@ -48,7 +40,14 @@ void destroy_vector(vector* v)
 	free(v);
 }
 
-void vector_init(vector* v, int init)
+void init_vector(vector* v, float x, float y, float z)
+{
+	v->x = x;
+	v->y = y;
+	v->z = z;
+}
+
+void init_vector_scalar(vector* v, float init)
 {
 	v->x = init;
 	v->y = init;
@@ -106,6 +105,15 @@ float vector_distance(vector* a, vector* b)
 	return sqrt(xd * xd + yd * yd + zd * zd);
 }
 
+float vector_distance_nosqrt(vector* a, vector* b)
+{
+	register float xd = b->x - a->x;
+	register float yd = b->y - a->y;
+	register float zd = b->z - a->z;
+
+	return (xd * xd + yd * yd + zd * zd);
+
+}
 float vector_magnitude(vector* v)
 {
 	return sqrt((v->x * v->x) + (v->y * v->y) + (v->z * v->z));
