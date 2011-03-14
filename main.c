@@ -29,21 +29,11 @@ int keyPressed(SDL_Event* event, int key)
 // Update the positions of all the boids based on their velocity
 void update(boid* flock)
 {
-	vector influence;
-	vector random;
-
 	int i;
 	for(i = 0; i < NUM_BOIDS; i++)
 	{
-		// Get our influence vectors
-		flock_influence(&influence, flock, &flock[i]);
-		randomize_vector(&random, 0, 1.3);
-
 		// Add our influence vectors to the acceleration vector of the boid
-		vector_add(&flock[i].acceleration, &influence);
-
-		// Add a little random weighting to the acceleration, to make movements more organic
-		vector_mul(&flock[i].acceleration, &random);
+		flock_influence(&flock[i].acceleration, flock, &flock[i]);
 
 		vector_add(&flock[i].velocity, &flock[i].acceleration);
 		vector_add(&flock[i].location, &flock[i].velocity);
