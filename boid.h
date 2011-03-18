@@ -25,6 +25,4 @@ void init_boid(boid* b, SDL_Surface* image, int loc_x, int loc_y, int vel_x, int
 
 inline void flock_influence(vector* v, boid* flock, boid* b);
 
-inline void flock_limit_velocity(boid* flock, int num_boids, float max_velocity);
-
 #endif

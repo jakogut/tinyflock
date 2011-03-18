@@ -41,9 +41,6 @@ void update(boid* flock)
 		// Reset the acceleration vectors for the flock
 		init_vector_scalar(&flock[i].acceleration, 0.0);
 	}
-
-	// Limit boid velocity to MAX_BOID_VELOCITY as defined in config.h
-	flock_limit_velocity(flock, NUM_BOIDS, MAX_BOID_VELOCITY);
 }
 
 // Render the boids

@@ -75,10 +75,3 @@ void  flock_influence(vector* v, boid* flock, boid* b)
 	for(i = 0; i < 2; i++)
 		vector_add(v, &influence[i]);
 }
-
-void flock_limit_velocity(boid* flock, int num_boids, float max_velocity)
-{
-	int i;
-	for(i = 0; i < num_boids; i++)
-		vector_clamp_scalar(&flock[i].velocity, (0 - max_velocity), max_velocity);
-}
