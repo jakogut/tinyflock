@@ -1,4 +1,3 @@
-#include "config.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -21,7 +20,7 @@ float rand_range(float min, float max)
 }
 
 // Returns true if key pressed, false otherwise
-int keyPressed(SDL_Event* event, int key)
+int key_pressed(SDL_Event* event, int key)
 {
 	return (event->type == SDL_KEYDOWN && event->key.keysym.sym == SDLK_ESCAPE);
 }
@@ -30,7 +29,7 @@ int keyPressed(SDL_Event* event, int key)
 inline int handle_events(SDL_Event* event)
 {
 	while(SDL_PollEvent(event))
-		if(event->type == SDL_QUIT || keyPressed(event, SDLK_ESCAPE)) return 0;
+		if(event->type == SDL_QUIT || key_pressed(event, SDLK_ESCAPE)) return 0;
 
 	return 1;
 
