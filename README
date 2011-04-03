@@ -1,0 +1,24 @@
+If you cloned the the git repostory, 
+generate the configure script by running
+
+	autoreconf -i
+
+Run the configure script, and to build, run
+
+	make
+
+To install, as root run
+
+	make install
+
+To clean all the intermediate build files, run
+
+	make clean
+
+
+To see what arguments the application will accept, run
+
+	./flock --help
+
+As of now, the demo is non-interactive, but you can control certain
+runtime attributes, like the number of boids, using arguments.
