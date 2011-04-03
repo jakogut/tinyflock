@@ -3,7 +3,7 @@
 
 #include <SDL.h>
 
-#include "flockconfig.h"
+#include "configuration.h"
 #include "vector.h"
 
 typedef struct
@@ -23,6 +23,6 @@ typedef struct
 
 void init_boid(boid* b, SDL_Surface* image, int loc_x, int loc_y, int vel_x, int vel_y);
 
-inline void flock_influence(vector* v, boid* flock, boid* b);
+inline void flock_influence(vector* v, boid* flock, boid* b, configuration* config);
 
 #endif

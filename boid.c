@@ -1,4 +1,5 @@
-#include "config.h"
+#include <math.h>
+
 #include "boid.h"
 
 void init_boid(boid* b, SDL_Surface* image, int loc_x, int loc_y, int vel_x, int vel_y)
@@ -10,7 +11,7 @@ void init_boid(boid* b, SDL_Surface* image, int loc_x, int loc_y, int vel_x, int
 	init_vector(&b->acceleration, 0, 0, 0);
 }
 
-void  flock_influence(vector* v, boid* flock, boid* b)
+void  flock_influence(vector* v, boid* flock, boid* b, configuration* config)
 {
 	init_vector_scalar(v, 0);
 
@@ -26,20 +27,23 @@ void  flock_influence(vector* v, boid* flock, boid* b)
 	for(i = 0; i < 2; i++)
 		init_vector_scalar(&influence[i], 0);
 
-	for(i = 0; i < NUM_BOIDS; i++)
+	float neighborhood_radius_squared = pow(config->flock.neighborhood_radius, 2);
+	float min_boid_separation_squared = pow(config->flock.min_boid_separation, 2);
+
+	for(i = 0; i < config->flock.num_boids; i++)
 	{
 		if(&flock[i] != b)
 		{
 			float distance = vector_distance_nosqrt(&flock[i].location, &b->location);
 
-			if(distance < NEIGHBORHOOD_RADIUS_SQUARED)
+			if(distance < neighborhood_radius_squared)
 			{
 				vector_add(&influence[0], &flock[i].velocity);
 				vector_add(&influence[0], &flock[i].location);
 
 				population[0] += 2;
 
-				if(distance < MIN_BOID_SEPARATION_SQUARED)
+				if(distance < min_boid_separation_squared)
 				{
 					vector loc;
 					copy_vector(&loc, &b->location);
@@ -66,9 +70,9 @@ void  flock_influence(vector* v, boid* flock, boid* b)
 		if(vector_magnitude(&influence[i]) > 0)
 		{
 			vector_normalize(&influence[i]);
-			vector_mul_scalar(&influence[i], MAX_BOID_VELOCITY);
+			vector_mul_scalar(&influence[i], config->flock.max_boid_velocity);
 			vector_sub(&influence[i], &b->velocity);
-			vector_mul_scalar(&influence[i], MAX_BOID_STEERING_FORCE);
+			vector_mul_scalar(&influence[i], config->flock.max_boid_steering_force);
 		}
 	}
 
