@@ -56,8 +56,10 @@ int print_help()
 
 		"Flock configuration\n"
 		"------------------------------------------------------------\n"
-		"-n / --num-boids\tSpecify the number of boids to create.\n");
-
+		"-fc / --flock-count\n\tSpecify the number of boids to create.\n"
+		"-fs / --flock-separation\n\tSpecify a minimum distance to keep from neighbors.\n"
+		"-fv / --flock-velocity\n\tSpecify a maximum velocity a boid can travel.\n"
+		"-fn / --flock-neighborhood\n\tSpecify the size of the neighborhood a boid can see.\n");
 	return 0;
 }
 
@@ -83,21 +85,22 @@ int main(int argc, char** argv)
 	{
 		if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
 			return print_help();
-
-		if(strcmp(argv[i], "--width") == 0)
+		else if(strcmp(argv[i], "--width") == 0)
 			config.video.screen_width = atoi(argv[++i]);
-
-		if(strcmp(argv[i], "--height") == 0)
+		else if(strcmp(argv[i], "--height") == 0)
 			config.video.screen_height = atoi(argv[++i]);
-
-		if(strcmp(argv[i], "--depth") == 0)
+		else if(strcmp(argv[i], "--depth") == 0)
 			config.video.screen_depth = atoi(argv[++i]);
-
-		if(strcmp(argv[i], "--fps") == 0)
+		else if(strcmp(argv[i], "--fps") == 0)
 			config.video.frames_per_second = atoi(argv[++i]);
-
-		if(strcmp(argv[i], "-n") == 0 || strcmp(argv[i], "--num-boids") == 0)
+		else if(strcmp(argv[i], "-fc") == 0 || strcmp(argv[i], "--flock-count") == 0)
 			config.flock.num_boids = atoi(argv[++i]);
+		else if(strcmp(argv[i], "-fs") == 0 || strcmp(argv[i], "--flock-separation") == 0)
+			config.flock.min_boid_separation = atoi(argv[++i]);
+		else if(strcmp(argv[i], "-fv") == 0 || strcmp(argv[i], "--flock-velocity") == 0)
+			config.flock.max_boid_velocity = atoi(argv[++i]);
+		else if(strcmp(argv[i], "-fn") == 0 || strcmp(argv[i], "--flock-neighborhood") == 0)
+			config.flock.neighborhood_radius = atoi(argv[++i]);
 	}
 
 	// Init SDL and create our screen
