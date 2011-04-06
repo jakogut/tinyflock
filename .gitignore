@@ -13,3 +13,4 @@ configure
 flock
 m4/*.m4
 stamp-h1
+*.save
