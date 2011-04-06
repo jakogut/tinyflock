@@ -29,7 +29,7 @@ inline int handle_events(SDL_Event* event)
 
 int print_help()
 {
-	printf("(C) 2011 by Joseph A. Kogut (joseph.kogut@gmail.com)\n"
+	printf("\n(C) 2011 by Joseph A. Kogut (joseph.kogut@gmail.com)\n"
 		"This software is distributed under the MIT license,\n"
 		"with no warranty, express or implied. Run this software\n"
 		"at your own risk.\n\n"
@@ -41,9 +41,10 @@ int print_help()
 		"--height\tSpecify screen height in pixels.\n"
 		"--width\t\tSpecify screen width in pixels.\n"
 		"--depth\t\tSpecify screen depth in bits.\n"
-		"--fps\t\tSpecify the maximum number of frames to render\n"
-		"\t\tper second.\n"
-		"--draw-anchor\tDisplay a visual anchor to prevent motion sickness.\n\n"
+		"--fps\t\tSpecify the maximum number of frames to\n"
+		"\t\trender per second.\n"
+		"--draw-anchor\tDisplay a visual anchor to prevent motion\n"
+		"\t\tsickness.\n\n"
 
 
 		"Flock configuration\n"
