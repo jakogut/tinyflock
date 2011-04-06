@@ -10,6 +10,8 @@
 
 #define FPS 0
 
+#define DRAW_ANCHOR 0
+
 // Default boid parameters
 #define NUM_BOIDS 2048
 
@@ -21,12 +23,15 @@
 typedef struct
 {
 	SDL_Surface* boid_sprite;
+	SDL_Surface* anchor_sprite;
 
 	struct
 	{
 		int screen_width, screen_height, screen_depth;
 
 		int frames_per_second;
+
+		int draw_anchor;
 
 	} video;
 

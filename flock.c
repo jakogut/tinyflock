@@ -57,9 +57,15 @@ void* flock_render_pthread(void* arg)
 {
 	const flock_render_data* args = (flock_render_data*)arg;
 
+	SDL_Rect center;
+	center.x = args->config->video.screen_width / 2;
+	center.y = args->config->video.screen_height / 2;
+
 	while(args->run)
 	{
 		SDL_FillRect(args->screen, NULL, 0xFFFFFF);
+
+		if(args->config->video.draw_anchor) SDL_BlitSurface(args->config->anchor_sprite, NULL, args->screen, &center);
 
 		int i;
 		for(i = 0; i < args->config->flock.num_boids; i++)

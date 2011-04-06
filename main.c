@@ -83,6 +83,8 @@ int main(int argc, char** argv)
 			config.video.screen_depth = atoi(argv[++i]);
 		else if(strcmp(argv[i], "--fps") == 0)
 			config.video.frames_per_second = atoi(argv[++i]);
+		else if(strcmp(argv[i], "--draw-anchor") == 0)
+			config.video.draw_anchor = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-fc") == 0 || strcmp(argv[i], "--flock-count") == 0)
 			config.flock.num_boids = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-fs") == 0 || strcmp(argv[i], "--flock-separation") == 0)
@@ -103,6 +105,10 @@ int main(int argc, char** argv)
 	// Load and format our boid image
 	SDL_Surface* temp = IMG_Load("boid.png");
 	config.boid_sprite = SDL_DisplayFormatAlpha(temp);
+	SDL_FreeSurface(temp);
+
+	temp = IMG_Load("anchor.png");
+	config.anchor_sprite = SDL_DisplayFormatAlpha(temp);
 	SDL_FreeSurface(temp);
 
 	srand(time(NULL));
