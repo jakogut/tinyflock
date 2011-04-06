@@ -124,32 +124,38 @@ int main(int argc, char** argv)
 					rand_range((0 - config.flock.max_boid_velocity), config.flock.max_boid_velocity));
 	}
 
+	flock_render_data render_data;
+
+	render_data.run = 1;
+	render_data.flock = flock;
+	render_data.config = &config;
+	render_data.screen = screen;
+
+	pthread_t render_thread;
+	pthread_create(&render_thread, NULL, flock_render_pthread, (void*)&render_data);
+
 	// Run while true
-	int run = 1;
+	int* run = &render_data.run;
 
 	// If the frame limit is not greater than 0, don't delay between frames at all.
 	if(config.video.frames_per_second > 0)
 	{
 		float delay = (1000 / config.video.frames_per_second);
 
-		while(run)
+		while(*run)
 		{
-			run = handle_events(&event);
-
+			*run = handle_events(&event);
 			flock_update(flock, &config);
-			flock_render(flock, &config, screen);
 
 			SDL_Delay(delay);
 		}
 	}
 	else
 	{
-		while(run)
+		while(*run)
 		{
-			run = handle_events(&event);
-
+			*run = handle_events(&event);
 			flock_update(flock, &config);
-			flock_render(flock, &config, screen);
 		}
 	}
 

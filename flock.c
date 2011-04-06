@@ -13,30 +13,40 @@ void flock_update(boid* flock, configuration* config)
 
 		// Reset the acceleration vectors for the flock
 		init_vector_scalar(&flock[i].acceleration, 0.0);
+
+		// If the boid goes off the screen, wrap the location around to the other side
+		if(flock[i].location.x >= config->video.screen_width)
+			flock[i].location.x = 0;
+		else if(flock[i].location.x <= 0)
+			flock[i].location.x = config->video.screen_width;
+
+		if(flock[i].location.y >= config->video.screen_height)
+			flock[i].location.y = 0;
+		else if(flock[i].location.y <= 0)
+			flock[i].location.x = config->video.screen_height;
+
 	}
 }
 
-void flock_render(boid* flock, configuration* config, SDL_Surface* screen)
+void* flock_render_pthread(void* arg)
 {
-	SDL_FillRect(screen, NULL, 0xFFFFFF);
+	flock_render_data* args = (flock_render_data*)arg;
 
-	int i;
-	for(i = 0; i < config->flock.num_boids; i++)
+	while(args->run)
 	{
-		// If the boid goes off the screen, wrap the location around to the other side
-		if(flock[i].location.x >= config->video.screen_width) flock[i].location.x = 0;
-		else if(flock[i].location.x <= 0) flock[i].location.x = config->video.screen_width;
+		SDL_FillRect(args->screen, NULL, 0xFFFFFF);
 
-		if(flock[i].location.y >= config->video.screen_height) flock[i].location.y = 0;
-		else if(flock[i].location.y <= 0) flock[i].location.x = config->video.screen_height;
+		int i;
+		for(i = 0; i < args->config->flock.num_boids; i++)
+		{
+			SDL_Rect offset;
 
-		SDL_Rect offset;
+			offset.x = args->flock[i].location.x;
+			offset.y = args->flock[i].location.y;
 
-		offset.x = flock[i].location.x;
-		offset.y = flock[i].location.y;
+			SDL_BlitSurface(args->flock[i].sprite, NULL, args->screen, &offset);
+		}
 
-		SDL_BlitSurface(flock[i].sprite, NULL, screen, &offset);
+		SDL_Flip(args->screen);
 	}
-
-	SDL_Flip(screen);
 }
