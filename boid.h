@@ -21,6 +21,4 @@ typedef struct
 
 void init_boid(boid* b, float loc_x, float loc_y, float vel_x, float vel_y);
 
-inline void flock_influence(vector* v, boid* flock, boid* b, configuration* config);
-
 #endif

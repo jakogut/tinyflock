@@ -68,6 +68,13 @@ void vector_sub(vector* a, vector* b)
 	a->z -= b->z;
 }
 
+void vector_sub_scalar(vector* a, float b)
+{
+	a->x -= b;
+	a->y -= b;
+	a->z -= b;
+}
+
 void vector_mul(vector* a, vector* b)
 {
 	a->x *= b->x;
@@ -114,6 +121,7 @@ float vector_distance_nosqrt(vector* a, vector* b)
 	return (xd * xd + yd * yd + zd * zd);
 
 }
+
 float vector_magnitude(vector* v)
 {
 	return sqrt((v->x * v->x) + (v->y * v->y) + (v->z * v->z));
@@ -124,11 +132,7 @@ void vector_normalize(vector* v)
 	float magnitude = vector_magnitude(v);
 
 	if(magnitude > 0)
-	{
-		v->x /= magnitude;
-		v->y /= magnitude;
-		v->z /= magnitude;
-	}
+		vector_div_scalar(v, magnitude);
 }
 
 void vector_clamp(vector* v, vector* min, vector* max)
@@ -152,3 +156,4 @@ void vector_clamp_scalar(vector* v, float min, float max)
 	if(v->y > max) v->y = max;
 	if(v->z > max) v->z = max;
 }
+

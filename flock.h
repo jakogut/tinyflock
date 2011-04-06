@@ -20,6 +20,8 @@ typedef struct{ int run; boid* flock; configuration* config; SDL_Surface* screen
 // Render the flock (independent thread)
 void* flock_render_pthread(void* arg);
 
+void flock_influence(vector* v, boid* flock, boid* b, configuration* config);
+
 static inline float rand_range(float min, float max);
 
 #endif

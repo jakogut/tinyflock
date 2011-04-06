@@ -27,6 +27,8 @@ inline void vector_add(vector* a, vector* b);
 
 inline void vector_sub(vector* a, vector* b);
 
+inline void vector_sub_scalar(vector* a, float b);
+
 inline void vector_mul(vector* a, vector* b);
 
 inline void vector_mul_scalar(vector* a, float b);

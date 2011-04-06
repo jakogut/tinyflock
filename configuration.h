@@ -11,12 +11,12 @@
 #define FPS 0
 
 // Default boid parameters
-#define NUM_BOIDS 1024
+#define NUM_BOIDS 2048
 
 #define MAX_BOID_VELOCITY 10
 #define MIN_BOID_SEPARATION 3
-#define MAX_BOID_STEERING_FORCE 0.2
-#define NEIGHBORHOOD_RADIUS 32
+#define MAX_BOID_STEERING_FORCE 0.05
+#define NEIGHBORHOOD_RADIUS 25
 
 typedef struct
 {
