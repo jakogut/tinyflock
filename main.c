@@ -42,7 +42,9 @@ int print_help()
 		"--width\t\tSpecify screen width in pixels.\n"
 		"--depth\t\tSpecify screen depth in bits.\n"
 		"--fps\t\tSpecify the maximum number of frames to render\n"
-		"\t\tper second.\n\n"
+		"\t\tper second.\n"
+		"--draw-anchor\tDisplay a visual anchor to prevent motion sickness.\n\n"
+
 
 		"Flock configuration\n"
 		"------------------------------------------------------------\n"
