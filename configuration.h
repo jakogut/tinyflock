@@ -1,6 +1,8 @@
 #ifndef CONFIGURATION_H_
 #define CONFIGURATION_H_
 
+#include <SDL.h>
+
 // Default video configuration
 #define SCREEN_WIDTH    1280
 #define SCREEN_HEIGHT   720
@@ -18,6 +20,7 @@
 
 typedef struct
 {
+	SDL_Surface* boid_sprite;
 
 	struct
 	{

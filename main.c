@@ -11,16 +11,6 @@
 
 #include "configuration.h"
 
-float rand_range(float min, float max)
-{
-	float range = max - min;
-
-	float num = (rand() / (float)RAND_MAX) * range;
-	num += min;
-
-	return num;
-}
-
 // Returns true if key pressed, false otherwise
 int key_pressed(SDL_Event* event, int key)
 {
@@ -112,20 +102,13 @@ int main(int argc, char** argv)
 
 	// Load and format our boid image
 	SDL_Surface* temp = IMG_Load("boid.png");
-	SDL_Surface* boid_image = SDL_DisplayFormatAlpha(temp);
+	config.boid_sprite = SDL_DisplayFormatAlpha(temp);
 	SDL_FreeSurface(temp);
-
-	// Create an array of boids
-	boid* flock = malloc(sizeof(boid) * config.flock.num_boids);
 
 	srand(time(NULL));
 
-	for(i = 0; i < config.flock.num_boids; i++)
-	{
-		init_boid(&flock[i], boid_image, rand_range(0, config.video.screen_width), rand_range(0, config.video.screen_height),
-					rand_range((0 - config.flock.max_boid_velocity), config.flock.max_boid_velocity),
-					rand_range((0 - config.flock.max_boid_velocity), config.flock.max_boid_velocity));
-	}
+	// Create our flock
+	boid* flock = create_flock(&config);
 
 	flock_render_data render_data;
 
@@ -162,9 +145,9 @@ int main(int argc, char** argv)
 		}
 	}
 
-	free(flock);
+	destroy_flock(flock);
 
-	SDL_FreeSurface(boid_image);
+	SDL_FreeSurface(config.boid_sprite);
 	SDL_Quit();
 
 	return 0;

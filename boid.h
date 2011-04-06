@@ -8,8 +8,6 @@
 
 typedef struct
 {
-	SDL_Surface* sprite;
-
 	// Where the boid is on the screen
 	vector location;
 
@@ -21,7 +19,7 @@ typedef struct
 
 } boid;
 
-void init_boid(boid* b, SDL_Surface* image, int loc_x, int loc_y, int vel_x, int vel_y);
+void init_boid(boid* b, float loc_x, float loc_y, float vel_x, float vel_y);
 
 inline void flock_influence(vector* v, boid* flock, boid* b, configuration* config);
 

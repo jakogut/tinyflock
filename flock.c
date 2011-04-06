@@ -1,5 +1,31 @@
 #include "flock.h"
 
+boid* create_flock(configuration* config)
+{
+	boid* flock;
+
+	flock = malloc(sizeof(boid) * config->flock.num_boids);
+
+	int i;
+	for(i = 0; i < config->flock.num_boids; i++)
+	{
+		// We add 0.0001 * i to the position of each boid so they don't spawn on top of each other.
+		init_boid(&flock[i], (config->video.screen_width / 2) + (0.0001 * i),
+				     (config->video.screen_height / 2) + (0.0001 * i),
+				     rand_range((0.0f - config->flock.max_boid_velocity), config->flock.max_boid_velocity),
+				     rand_range((0.0f - config->flock.max_boid_velocity), config->flock.max_boid_velocity));
+	}
+
+	return flock;
+}
+
+void destroy_flock(boid* flock)
+{
+	if(flock) free(flock);
+
+	flock = NULL;
+}
+
 void flock_update(boid* flock, configuration* config)
 {
 	int i;
@@ -30,7 +56,7 @@ void flock_update(boid* flock, configuration* config)
 
 void* flock_render_pthread(void* arg)
 {
-	flock_render_data* args = (flock_render_data*)arg;
+	const flock_render_data* args = (flock_render_data*)arg;
 
 	while(args->run)
 	{
@@ -44,9 +70,20 @@ void* flock_render_pthread(void* arg)
 			offset.x = args->flock[i].location.x;
 			offset.y = args->flock[i].location.y;
 
-			SDL_BlitSurface(args->flock[i].sprite, NULL, args->screen, &offset);
+			SDL_BlitSurface(args->config->boid_sprite, NULL, args->screen, &offset);
 		}
 
 		SDL_Flip(args->screen);
 	}
 }
+
+float rand_range(float min, float max)
+{
+	float range = max - min;
+
+	float num = (rand() / (float)RAND_MAX) * range;
+	num += min;
+
+	return num;
+}
+
