@@ -53,7 +53,7 @@ void flock_update(boid* flock, configuration* config)
 	}
 }
 
-void* flock_render_pthread(void* arg)
+int flock_render_thread(void* arg)
 {
 	const flock_render_data* args = (flock_render_data*)arg;
 
@@ -80,6 +80,8 @@ void* flock_render_pthread(void* arg)
 
 		SDL_Flip(args->screen);
 	}
+
+	return 0;
 }
 
 void  flock_influence(vector* v, boid* flock, boid* b, configuration* config)

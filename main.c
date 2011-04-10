@@ -5,6 +5,7 @@
 
 #include <SDL.h>
 #include <SDL_image.h>
+#include <SDL_thread.h>
 
 #include "flock.h"
 #include "boid.h"
@@ -126,8 +127,8 @@ int main(int argc, char** argv)
 	render_data.config = &config;
 	render_data.screen = screen;
 
-	pthread_t render_thread;
-	pthread_create(&render_thread, NULL, flock_render_pthread, (void*)&render_data);
+	SDL_Thread* render_thread;
+	render_thread = SDL_CreateThread(flock_render_thread, (void*)&render_data);
 
 	// Run while true
 	int* run = &render_data.run;
