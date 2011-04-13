@@ -19,13 +19,35 @@ int key_pressed(SDL_Event* event, int key)
 }
 
 // Handle input and events. Return 0 to quit the program, or 1 to keep running.
-inline int handle_events(SDL_Event* event)
+inline int handle_events(SDL_Event* event, vector* cursor_pos, int* cursor_interaction)
 {
 	while(SDL_PollEvent(event))
-		if(event->type == SDL_QUIT || key_pressed(event, SDLK_ESCAPE)) return 0;
+	{
+		int x, y;
+
+		switch(event->type)
+		{
+			case SDL_KEYDOWN:
+				if(key_pressed(event, SDLK_ESCAPE)) return 0;
+				break;
+			case SDL_MOUSEBUTTONDOWN:
+				if(event->button.button == 1) *cursor_interaction = 1;
+				else if(event->button.button == 3) *cursor_interaction = 2;
+				break;
+			case SDL_MOUSEBUTTONUP:
+				*cursor_interaction = 0;
+				break;
+			case SDL_MOUSEMOTION:
+				SDL_GetMouseState(&x, &y);
+				cursor_pos->x = x, cursor_pos->y = y;
+				break;
+			case SDL_QUIT:
+				return 0;
+				break;
+		}
+	}
 
 	return 1;
-
 }
 
 int print_help()
@@ -133,6 +155,9 @@ int main(int argc, char** argv)
 	// Run while true
 	int* run = &render_data.run;
 
+	vector cursor_pos;
+	int cursor_interaction = 0;
+
 	// If the frame limit is not greater than 0, don't delay between frames at all.
 	if(config.video.frames_per_second > 0)
 	{
@@ -140,8 +165,8 @@ int main(int argc, char** argv)
 
 		while(*run)
 		{
-			*run = handle_events(&event);
-			flock_update(flock, &config);
+			*run = handle_events(&event, &cursor_pos, &cursor_interaction);
+			flock_update(flock, &config, &cursor_pos, &cursor_interaction);
 
 			SDL_Delay(delay);
 		}
@@ -150,8 +175,8 @@ int main(int argc, char** argv)
 	{
 		while(*run)
 		{
-			*run = handle_events(&event);
-			flock_update(flock, &config);
+			*run = handle_events(&event, &cursor_pos, &cursor_interaction);
+			flock_update(flock, &config, &cursor_pos, &cursor_interaction);
 		}
 	}
 

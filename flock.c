@@ -25,7 +25,7 @@ void destroy_flock(boid* flock)
 	flock = NULL;
 }
 
-void flock_update(boid* flock, configuration* config)
+void flock_update(boid* flock, configuration* config, vector* cursor_pos, int* cursor_interaction)
 {
 	int i;
 	for(i = 0; i < config->flock.num_boids; i++)

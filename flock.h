@@ -12,7 +12,7 @@ boid* create_flock(configuration* config);
 void destroy_flock(boid* flock);
 
 // Update the location and velocity of each boid in the flock
-void flock_update(boid* flock, configuration* config);
+void flock_update(boid* flock, configuration* config, vector* cursor_pos, int* cursor_interaction);
 
 // thread args type for flock_render
 typedef struct{ int run; boid* flock; configuration* config; SDL_Surface* screen; } flock_render_data;
