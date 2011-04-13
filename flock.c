@@ -10,8 +10,7 @@ boid* create_flock(configuration* config)
 	for(i = 0; i < config->flock.num_boids; i++)
 	{
 		// We add 0.0001 * i to the position of each boid so they don't spawn on top of each other.
-		init_boid(&flock[i], (config->video.screen_width / 2) + (0.0001 * i),
-				     (config->video.screen_height / 2) + (0.0001 * i),
+		init_boid(&flock[i], (0.0001 * i), (0.0001 * i),
 				     rand_range((0.0f - config->flock.max_boid_velocity), config->flock.max_boid_velocity),
 				     rand_range((0.0f - config->flock.max_boid_velocity), config->flock.max_boid_velocity));
 	}
