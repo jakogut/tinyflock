@@ -75,7 +75,12 @@ int print_help()
 		"-fc / --flock-count\n\tSpecify the number of boids to create.\n"
 		"-fs / --flock-separation\n\tSpecify a minimum distance to keep from neighbors.\n"
 		"-fv / --flock-velocity\n\tSpecify a maximum velocity a boid can travel.\n"
-		"-fn / --flock-neighborhood\n\tSpecify the size of the neighborhood a boid can see.\n");
+		"-fn / --flock-neighborhood\n\tSpecify the size of the neighborhood a boid can see.\n\n"
+
+		"Misc.\n"
+		"------------------------------------------------------------\n"
+		"-t / --num-threads\n\tSpecify the number of worker threads used to\n"
+		"\tcalculate boid movement.\n");
 	return 0;
 }
 
@@ -113,7 +118,7 @@ int main(int argc, char** argv)
 		else if(strcmp(argv[i], "--fps") == 0)
 			config.video.frames_per_second = atoi(argv[++i]);
 		else if(strcmp(argv[i], "--draw-anchor") == 0)
-			config.video.draw_anchor = atoi(argv[++i]);
+			config.video.draw_anchor = 1 && ++i;
 		else if(strcmp(argv[i], "-fc") == 0 || strcmp(argv[i], "--flock-count") == 0)
 			config.flock.num_boids = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-fs") == 0 || strcmp(argv[i], "--flock-separation") == 0)
