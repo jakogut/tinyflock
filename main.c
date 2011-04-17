@@ -84,10 +84,13 @@ int main(int argc, char** argv)
 	// Create a configuration object, and set the values to the defaults
 	configuration config;
 
+	config.num_threads = NUM_THREADS;
+
 	config.video.screen_width = SCREEN_WIDTH;
 	config.video.screen_height = SCREEN_HEIGHT;
 	config.video.screen_depth = SCREEN_DEPTH;
 	config.video.frames_per_second = FPS;
+	config.video.draw_anchor = DRAW_ANCHOR;
 
 	config.flock.num_boids = NUM_BOIDS;
 	config.flock.max_boid_velocity = MAX_BOID_VELOCITY;
@@ -119,6 +122,9 @@ int main(int argc, char** argv)
 			config.flock.max_boid_velocity = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-fn") == 0 || strcmp(argv[i], "--flock-neighborhood") == 0)
 			config.flock.neighborhood_radius = atoi(argv[++i]);
+		else if(strcmp(argv[i], "-t") == 0 || strcmp(argv[i], "--num-threads") == 0)
+			config.num_threads = atoi(argv[++i]);
+
 	}
 
 	// Init SDL and create our screen
@@ -142,41 +148,34 @@ int main(int argc, char** argv)
 	// Create our flock
 	boid* flock = create_flock(&config);
 
-	flock_render_data render_data;
-
-	render_data.run = 1;
-	render_data.flock = flock;
-	render_data.config = &config;
-	render_data.screen = screen;
-
-	SDL_Thread* render_thread;
-	render_thread = SDL_CreateThread(flock_render_thread, (void*)&render_data);
-
-	// Run while true
-	int* run = &render_data.run;
-
 	vector cursor_pos;
 	int cursor_interaction = 0;
+
+	int run = 1;
 
 	// If the frame limit is not greater than 0, don't delay between frames at all.
 	if(config.video.frames_per_second > 0)
 	{
 		float delay = (1000 / config.video.frames_per_second);
 
-		while(*run)
+		while(run)
 		{
-			*run = handle_events(&event, &cursor_pos, &cursor_interaction);
+			run = handle_events(&event, &cursor_pos, &cursor_interaction);
+
 			flock_update(flock, &config, &cursor_pos, &cursor_interaction);
+			flock_render(flock, &config, screen);
 
 			SDL_Delay(delay);
 		}
 	}
 	else
 	{
-		while(*run)
+		while(run)
 		{
-			*run = handle_events(&event, &cursor_pos, &cursor_interaction);
+			run = handle_events(&event, &cursor_pos, &cursor_interaction);
+
 			flock_update(flock, &config, &cursor_pos, &cursor_interaction);
+			flock_render(flock, &config, screen);
 		}
 	}
 
