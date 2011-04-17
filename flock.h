@@ -11,7 +11,7 @@ boid* create_flock(configuration* config);
 
 void destroy_flock(boid* flock);
 
-typedef struct { int thread_id; boid* flock; boid* flock_copy; configuration* config; } flock_update_worker_args;
+typedef struct { int thread_id; boid* flock; boid* flock_copy; configuration* config; vector* cursor_pos; int* cursor_interaction; } flock_update_worker_args;
 
 int flock_update_worker(void* arg);
 

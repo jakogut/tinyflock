@@ -80,6 +80,8 @@ void flock_update(boid* flock, configuration* config, vector* cursor_pos, int* c
 		worker_args[i].flock = flock;
 		worker_args[i].flock_copy = flock_copy;
 		worker_args[i].config = config;
+		worker_args[i].cursor_pos = cursor_pos;
+		worker_args[i].cursor_interaction = cursor_interaction;
 
 		workers[i] = SDL_CreateThread(flock_update_worker, (void*)&worker_args[i]);
 	}
