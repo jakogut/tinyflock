@@ -77,9 +77,6 @@ int flock_update_worker(void* arg)
 			args->flock[i].location.y = 0;
 		else if(args->flock[i].location.y <= 0)
 			args->flock[i].location.y = args->config->video.screen_height;
-
-		// SHITTY BUG FIX
-		//args->flock[i].location.z = 0;
 	}
 
 	return 0;
