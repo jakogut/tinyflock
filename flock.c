@@ -1,8 +1,5 @@
 #include "flock.h"
 
-#include <SDL/SDL_thread.h>
-#include <SDL/SDL_mutex.h>
-
 boid* create_flock(configuration* config)
 {
 	boid* flock;
