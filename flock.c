@@ -41,13 +41,31 @@ int flock_update_worker(void* arg)
 	int i;
 	for(i = begin_work; i < end_work; i++)
 	{
+		// Calculate boid movement
 		flock_influence(&args->flock[i].acceleration, args->flock_copy, &args->flock_copy[i], args->config);
+
+		// Handle mouse input
+		switch(*args->cursor_interaction)
+		{
+			case 0:
+				break;
+			case 1:
+				if(vector_distance(&args->flock[i].location, args->cursor_pos) < 75)
+					boid_approach(&args->flock[i], args->cursor_pos);
+				break;
+			case 2:
+				if(vector_distance(&args->flock[i].location, args->cursor_pos) < 50)
+					boid_flee(&args->flock[i], args->cursor_pos);
+				break;
+			default:
+				break;
+		};
 
 		vector_add(&args->flock[i].velocity, &args->flock[i].acceleration);
 		vector_add(&args->flock[i].location, &args->flock[i].velocity);
 
 		// Reset the acceleration vectors for the flock
-		init_vector_scalar(&args->flock[i].acceleration, 0.0);
+		vector_init_scalar(&args->flock[i].acceleration, 0.0);
 
 		// If the boid goes off the screen, wrap the location around to the other side
 		if(args->flock[i].location.x >= args->config->video.screen_width)
@@ -59,6 +77,9 @@ int flock_update_worker(void* arg)
 			args->flock[i].location.y = 0;
 		else if(args->flock[i].location.y <= 0)
 			args->flock[i].location.y = args->config->video.screen_height;
+
+		// SHITTY BUG FIX
+		//args->flock[i].location.z = 0;
 	}
 
 	return 0;
@@ -120,7 +141,7 @@ void flock_render(boid* flock, configuration* config, SDL_Surface* screen)
 
 void  flock_influence(vector* v, boid* flock, boid* b, configuration* config)
 {
-	init_vector_scalar(v, 0);
+	vector_init_scalar(v, 0);
 
      /* influence[0] = alignment & cohesion,
 	influence[2] = separation */
@@ -132,7 +153,7 @@ void  flock_influence(vector* v, boid* flock, boid* b, configuration* config)
 
 	int i;
 	for(i = 0; i < 2; i++)
-		init_vector_scalar(&influence[i], 0);
+		vector_init_scalar(&influence[i], 0);
 
 	float neighborhood_radius_squared = pow(config->flock.neighborhood_radius, 2);
 	float min_boid_separation_squared = pow(config->flock.min_boid_separation, 2);
@@ -153,7 +174,7 @@ void  flock_influence(vector* v, boid* flock, boid* b, configuration* config)
 				if(distance < min_boid_separation_squared)
 				{
 					vector loc;
-					copy_vector(&loc, &b->location);
+					vector_copy(&loc, &b->location);
 
 					vector_sub(&loc, &flock[i].location);
 					vector_normalize(&loc);
@@ -172,7 +193,7 @@ void  flock_influence(vector* v, boid* flock, boid* b, configuration* config)
 		if(population[i] > 0)
 			vector_div_scalar(&influence[i], population[i]);
 		else
-			init_vector_scalar(&influence[i], 0);
+			vector_init_scalar(&influence[i], 0);
 
 		if(vector_magnitude(&influence[i]) > 0)
 		{
@@ -185,6 +206,28 @@ void  flock_influence(vector* v, boid* flock, boid* b, configuration* config)
 
 	for(i = 0; i < 2; i++)
 		vector_add(v, &influence[i]);
+}
+
+void boid_approach(boid* b, vector* v)
+{
+	vector heading;
+	vector_copy(&heading, v);
+	vector_sub(&heading, &b->location);
+
+	vector_normalize(&heading);
+
+	vector_add(&b->acceleration, &heading);
+}
+
+void boid_flee(boid* b, vector* v)
+{
+	vector heading;
+	vector_copy(&heading, v);
+	vector_sub(&heading, &b->location);
+
+	vector_normalize(&heading);
+
+	vector_sub(&b->acceleration, &heading);
 }
 
 float rand_range(float min, float max)

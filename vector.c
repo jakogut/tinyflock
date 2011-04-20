@@ -3,7 +3,7 @@
 
 #include "vector.h"
 
-vector* create_vector(float x, float y, float z)
+vector* vector_create(float x, float y, float z)
 {
 	vector* v = malloc(sizeof(vector));
 
@@ -14,7 +14,7 @@ vector* create_vector(float x, float y, float z)
 	return v;
 }
 
-void randomize_vector(vector* v, float min, float max)
+void vector_randomize(vector* v, float min, float max)
 {
 	float range = max - min;
 
@@ -28,26 +28,26 @@ void randomize_vector(vector* v, float min, float max)
 	v->z += min;
 }
 
-void copy_vector(vector* dest, vector* src)
+void vector_copy(vector* dest, vector* src)
 {
 	dest->x = src->x;
 	dest->y = src->y;
 	dest->z = src->z;
 }
 
-void destroy_vector(vector* v)
+void vector_destroy(vector* v)
 {
 	free(v);
 }
 
-void init_vector(vector* v, float x, float y, float z)
+void vector_init(vector* v, float x, float y, float z)
 {
 	v->x = x;
 	v->y = y;
 	v->z = z;
 }
 
-void init_vector_scalar(vector* v, float init)
+void vector_init_scalar(vector* v, float init)
 {
 	v->x = init;
 	v->y = init;

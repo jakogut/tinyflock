@@ -9,17 +9,17 @@ typedef struct
 
 } vector;
 
-vector* create_vector(float x, float y, float z);
+vector* vector_create(float x, float y, float z);
 
-inline void randomize_vector(vector* v, float min, float max);
+inline void vector_randomize(vector* v, float min, float max);
 
-void copy_vector(vector* dest, vector* src);
+void vector_copy(vector* dest, vector* src);
 
-void destroy_vector(vector* v);
+void vector_destroy(vector* v);
 
-inline void init_vector(vector* v, float x, float y, float z);
+inline void vector_init(vector* v, float x, float y, float z);
 
-inline void init_vector_scalar(vector* v, float init);
+inline void vector_init_scalar(vector* v, float init);
 
 /* The performance of these vector instructions could be improved on x86 using hand-coded SSE intrinsics,
 though the compiler may do that itself. */

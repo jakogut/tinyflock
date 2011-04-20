@@ -154,6 +154,8 @@ int main(int argc, char** argv)
 	boid* flock = create_flock(&config);
 
 	vector cursor_pos;
+	vector_init_scalar(&cursor_pos, 0);
+
 	int cursor_interaction = 0;
 
 	int run = 1;
