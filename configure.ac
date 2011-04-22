@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.68])
+AC_PREREQ([2.67])
 AC_INIT([flock], [0], [GenTiradentes at github])
 AC_CONFIG_AUX_DIR([auxfiles])
 AC_CONFIG_HEADERS([config.h])
