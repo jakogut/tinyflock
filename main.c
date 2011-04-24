@@ -57,8 +57,7 @@ inline int handle_events(SDL_Event* event, vector* cursor_pos, int* cursor_inter
 void init_gl(int width, int height)
 {
 	glViewport(0, 0, width, height);
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-//	glClearColor(255.0f, 255.0f, 255.0f, 0.0f);
+	glClearColor(255.0f, 255.0f, 255.0f, 0.0f);
 	glClearDepth(1.0);
 	glDepthFunc(GL_LESS);
 	glEnable(GL_DEPTH_TEST);
