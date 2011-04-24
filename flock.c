@@ -115,7 +115,8 @@ void flock_render_software(boid* flock, configuration* config, SDL_Surface* scre
 	center.x = config->video.screen_width / 2;
 	center.y = config->video.screen_height / 2;
 
-	SDL_FillRect(screen, NULL, 0xFFFFFF);
+	uint32_t white = SDL_MapRGB(screen->format, 0xff, 0xff, 0xff);
+	SDL_FillRect(screen, NULL, white);
 
 	if(config->video.draw_anchor) SDL_BlitSurface(config->anchor_sprite, NULL, screen, &center);
 
@@ -144,10 +145,10 @@ void flock_render_gl(boid* flock, configuration* config, SDL_Surface* screen)
 		glColor3f(0.0f, 0.0f, 0.0f);
 
 		glBegin(GL_QUADS);
-		glVertex3f(-2.0f, 2.0f, 0.0f);
-		glVertex3f( 2.0f, 2.0f, 0.0f);
-		glVertex3f( 2.0f,-2.0f, 0.0f);
-		glVertex3f(-2.0f,-2.0f, 0.0f);
+		glVertex3f(-3.0f, 3.0f, 0.0f);
+		glVertex3f( 3.0f, 3.0f, 0.0f);
+		glVertex3f( 3.0f,-3.0f, 0.0f);
+		glVertex3f(-3.0f,-3.0f, 0.0f);
 		glEnd();
 
 		glLoadIdentity();
