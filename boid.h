@@ -1,8 +1,6 @@
 #ifndef BOID_H_
 #define BOID_H_
 
-#include <SDL.h>
-
 #include "configuration.h"
 #include "vector.h"
 

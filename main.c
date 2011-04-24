@@ -3,9 +3,13 @@
 #include <string.h>
 #include <time.h>
 
-#include <SDL.h>
+#include <SDL/SDL.h>
+#include <SDL/SDL_thread.h>
 #include <SDL_image.h>
-#include <SDL_thread.h>
+
+#include <GL/gl.h>
+#include <GL/glu.h>
+
 
 #include "flock.h"
 #include "boid.h"
@@ -50,6 +54,24 @@ inline int handle_events(SDL_Event* event, vector* cursor_pos, int* cursor_inter
 	return 1;
 }
 
+void init_gl(int width, int height)
+{
+	glViewport(0, 0, width, height);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+//	glClearColor(255.0f, 255.0f, 255.0f, 0.0f);
+	glClearDepth(1.0);
+	glDepthFunc(GL_LESS);
+	glEnable(GL_DEPTH_TEST);
+	glShadeModel(GL_SMOOTH);
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+
+	glOrtho(0.0f, width, height, 0.0f, -1.0f, 1.0f);
+
+	glMatrixMode(GL_MODELVIEW);
+}
+
 int print_help()
 {
 	printf("\n(C) 2011 by Joseph A. Kogut (joseph.kogut@gmail.com)\n"
@@ -57,33 +79,43 @@ int print_help()
 		"with no warranty, express or implied. Run this software\n"
 		"at your own risk.\n\n"
 
-		"-h / --help\t\tPrint this help message.\n\n"
+		"-h | --help\t\tPrint this help message.\n\n"
 
 		"Video configuration\n"
 		"------------------------------------------------------------\n"
-		"--height\tSpecify screen height in pixels.\n"
-		"--width\t\tSpecify screen width in pixels.\n"
-		"--depth\t\tSpecify screen depth in bits.\n"
-		"--fps\t\tSpecify the maximum number of frames to\n"
-		"\t\trender per second.\n"
-		"--draw-anchor\tDisplay a visual anchor to prevent motion\n"
-		"\t\tsickness.\n\n"
+		"-r | --renderer [software | gl]\n"
+		"\t\tSpecify the method used to render the demo\n"
 
+		"--height [number]\n"
+		"\tSpecify screen height in pixels.\n\n"
+
+		"--width [number]\n"
+		"\tSpecify screen width in pixels.\n\n"
+
+		"--depth [number]\n"
+		"\tSpecify screen depth in bits.\n\n"
+
+		"--fps [number]\n"
+		"\tLimit the framerate to the number specified\n\n"
+
+		"--draw-anchor\n"
+		"\tDisplay a visual anchor to prevent motion sickness\n\n"
 
 		"Flock configuration\n"
 		"------------------------------------------------------------\n"
-		"-fc / --flock-count\n\tSpecify the number of boids to create.\n"
-		"-fs / --flock-separation\n\tSpecify a minimum distance to keep from neighbors.\n"
-		"-fv / --flock-velocity\n\tSpecify a maximum velocity a boid can travel.\n"
-		"-fn / --flock-neighborhood\n\tSpecify the size of the neighborhood a boid can see.\n\n"
+		"-fc | --flock-count\n\tSpecify the number of boids to create.\n\n"
+		"-fs | --flock-separation\n\tSpecify a minimum distance to keep from neighbors.\n\n"
+		"-fv | --flock-velocity\n\tSpecify a maximum velocity a boid can travel.\n\n"
+		"-fn | --flock-neighborhood\n\tSpecify the size of the neighborhood a boid can see.\n\n"
 
 		"Misc.\n"
 		"------------------------------------------------------------\n"
-		"-t / --num-threads\n\tSpecify the number of worker threads used to\n"
+		"-t | --num-threads\n\tSpecify the number of worker threads used to\n"
 		"\tcalculate boid movement.\n");
 	return 0;
 }
 
+//int main(int argc, char** argv)
 int main(int argc, char** argv)
 {
 	// Create a configuration object, and set the values to the defaults
@@ -91,16 +123,17 @@ int main(int argc, char** argv)
 
 	config.num_threads = NUM_THREADS;
 
+	config.video.renderer = RENDERER_SOFTWARE;
 	config.video.screen_width = SCREEN_WIDTH;
 	config.video.screen_height = SCREEN_HEIGHT;
 	config.video.screen_depth = SCREEN_DEPTH;
 	config.video.frames_per_second = FPS;
 	config.video.draw_anchor = DRAW_ANCHOR;
 
-	config.flock.num_boids = NUM_BOIDS;
-	config.flock.max_boid_velocity = MAX_BOID_VELOCITY;
-	config.flock.min_boid_separation = MIN_BOID_SEPARATION;
-	config.flock.max_boid_steering_force = MAX_BOID_STEERING_FORCE;
+	config.flock.size = NUM_BOIDS;
+	config.flock.max_velocity = MAX_BOID_VELOCITY;
+	config.flock.min_separation = MIN_BOID_SEPARATION;
+	config.flock.max_steering_force = MAX_BOID_STEERING_FORCE;
 	config.flock.neighborhood_radius = NEIGHBORHOOD_RADIUS;
 
 	// Parse arguments
@@ -109,6 +142,8 @@ int main(int argc, char** argv)
 	{
 		if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
 			return print_help();
+		else if((strcmp(argv[i], "-r") == 0 || strcmp(argv[i], "--renderer") == 0) && strcmp(argv[++i], "gl") == 0)
+			config.video.renderer = RENDERER_GL;
 		else if(strcmp(argv[i], "--width") == 0)
 			config.video.screen_width = atoi(argv[++i]);
 		else if(strcmp(argv[i], "--height") == 0)
@@ -120,11 +155,11 @@ int main(int argc, char** argv)
 		else if(strcmp(argv[i], "--draw-anchor") == 0)
 			config.video.draw_anchor = 1 && ++i;
 		else if(strcmp(argv[i], "-fc") == 0 || strcmp(argv[i], "--flock-count") == 0)
-			config.flock.num_boids = atoi(argv[++i]);
+			config.flock.size = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-fs") == 0 || strcmp(argv[i], "--flock-separation") == 0)
-			config.flock.min_boid_separation = atoi(argv[++i]);
+			config.flock.min_separation = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-fv") == 0 || strcmp(argv[i], "--flock-velocity") == 0)
-			config.flock.max_boid_velocity = atoi(argv[++i]);
+			config.flock.max_velocity = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-fn") == 0 || strcmp(argv[i], "--flock-neighborhood") == 0)
 			config.flock.neighborhood_radius = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-t") == 0 || strcmp(argv[i], "--num-threads") == 0)
@@ -133,13 +168,23 @@ int main(int argc, char** argv)
 	}
 
 	// Init SDL and create our screen
-	SDL_Init(SDL_INIT_VIDEO);
+	if(SDL_Init(SDL_INIT_VIDEO) < 0) printf("Unable to initialize SDL. %s\n", SDL_GetError());
 	SDL_Event event;
 
-	SDL_Surface* screen = SDL_SetVideoMode(config.video.screen_width, config.video.screen_height,
-					       config.video.screen_depth, SDL_HWSURFACE | SDL_DOUBLEBUF);
+	int flags = 0;
+	if(config.video.renderer == RENDERER_SOFTWARE) flags = SDL_HWSURFACE | SDL_DOUBLEBUF;
+	else if(config.video.renderer == RENDERER_GL) flags = SDL_OPENGL;
 
-	// Load and format our boid image
+	// Attempt to set the video mode
+	SDL_Surface* screen = SDL_SetVideoMode(config.video.screen_width, config.video.screen_height,
+					       config.video.screen_depth, flags);
+
+	if(!screen) printf("Unable to set video mode.\n");
+
+	// Set the window caption
+	SDL_WM_SetCaption("tinyflock", NULL);
+
+	// Load and format our images
 	SDL_Surface* temp = IMG_Load("boid.png");
 	config.boid_sprite = SDL_DisplayFormatAlpha(temp);
 	SDL_FreeSurface(temp);
@@ -153,6 +198,19 @@ int main(int argc, char** argv)
 	// Create our flock
 	boid* flock = create_flock(&config);
 
+	// Set the render function
+	render_func_t render;
+
+	switch(config.video.renderer)
+	{
+		case RENDERER_SOFTWARE:
+			render = &flock_render_software;
+			break;
+		case RENDERER_GL:
+			init_gl(config.video.screen_width, config.video.screen_height);
+			render = &flock_render_gl;
+			break;
+	};
 	vector cursor_pos;
 	vector_init_scalar(&cursor_pos, 0);
 
@@ -170,7 +228,7 @@ int main(int argc, char** argv)
 			run = handle_events(&event, &cursor_pos, &cursor_interaction);
 
 			flock_update(flock, &config, &cursor_pos, &cursor_interaction);
-			flock_render(flock, &config, screen);
+			render(flock, &config, screen);
 
 			SDL_Delay(delay);
 		}
@@ -182,7 +240,7 @@ int main(int argc, char** argv)
 			run = handle_events(&event, &cursor_pos, &cursor_interaction);
 
 			flock_update(flock, &config, &cursor_pos, &cursor_interaction);
-			flock_render(flock, &config, screen);
+			render(flock, &config, screen);
 		}
 	}
 

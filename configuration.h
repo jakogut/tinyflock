@@ -1,10 +1,14 @@
 #ifndef CONFIGURATION_H_
 #define CONFIGURATION_H_
 
-#include <SDL.h>
+#include <SDL/SDL.h>
 
 // Number of worker threads used to update boids
 #define NUM_THREADS 4
+
+// Renderer types
+#define RENDERER_SOFTWARE 0
+#define RENDERER_GL 1
 
 // Default video configuration
 #define SCREEN_WIDTH    1280
@@ -32,6 +36,8 @@ typedef struct
 
 	struct
 	{
+		int renderer;
+
 		int screen_width, screen_height, screen_depth;
 
 		int frames_per_second;
@@ -42,11 +48,11 @@ typedef struct
 
 	struct
 	{
-		int num_boids;
+		int size;
 
-		int max_boid_velocity;
-		int min_boid_separation;
-		float max_boid_steering_force;
+		int max_velocity;
+		int min_separation;
+		float max_steering_force;
 		int neighborhood_radius;
 
 	} flock;

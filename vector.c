@@ -114,9 +114,9 @@ float vector_distance(vector* a, vector* b)
 
 float vector_distance_nosqrt(vector* a, vector* b)
 {
-	register float xd = b->x - a->x;
-	register float yd = b->y - a->y;
-	register float zd = b->z - a->z;
+	float xd = b->x - a->x;
+	float yd = b->y - a->y;
+	float zd = b->z - a->z;
 
 	return (xd * xd + yd * yd + zd * zd);
 

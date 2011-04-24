@@ -4,15 +4,15 @@ boid* create_flock(configuration* config)
 {
 	boid* flock;
 
-	flock = malloc(sizeof(boid) * config->flock.num_boids);
+	flock = malloc(sizeof(boid) * config->flock.size);
 
 	int i;
-	for(i = 0; i < config->flock.num_boids; i++)
+	for(i = 0; i < config->flock.size; i++)
 	{
 		// We add 0.0001 * i to the position of each boid so they don't spawn on top of each other.
 		init_boid(&flock[i], (0.0001 * i), (0.0001 * i),
-				     rand_range((0.0f - config->flock.max_boid_velocity), config->flock.max_boid_velocity),
-				     rand_range((0.0f - config->flock.max_boid_velocity), config->flock.max_boid_velocity));
+				     rand_range((0.0f - config->flock.max_velocity), config->flock.max_velocity),
+				     rand_range((0.0f - config->flock.max_velocity), config->flock.max_velocity));
 	}
 
 	return flock;
@@ -30,7 +30,7 @@ int flock_update_worker(void* arg)
 {
 	flock_update_worker_args* args = (flock_update_worker_args*)arg;
 
-	int work_size = args->config->flock.num_boids / args->config->num_threads;
+	int work_size = args->config->flock.size / args->config->num_threads;
 
 	int begin_work = work_size * args->thread_id;
 	int end_work = begin_work + work_size - 1;
@@ -85,8 +85,8 @@ void flock_update(boid* flock, configuration* config, vector* cursor_pos, int* c
 
 	flock_update_worker_args* worker_args = malloc(sizeof(flock_update_worker_args) * config->num_threads);
 
-	boid* flock_copy = malloc(sizeof(boid) * config->flock.num_boids);
-	memcpy(flock_copy, flock, sizeof(boid) * config->flock.num_boids);
+	boid* flock_copy = malloc(sizeof(boid) * config->flock.size);
+	memcpy(flock_copy, flock, sizeof(boid) * config->flock.size);
 
 	int i;
 	for(i = 0; i < config->num_threads; i++)
@@ -109,7 +109,7 @@ void flock_update(boid* flock, configuration* config, vector* cursor_pos, int* c
 	free(workers);
 }
 
-void flock_render(boid* flock, configuration* config, SDL_Surface* screen)
+void flock_render_software(boid* flock, configuration* config, SDL_Surface* screen)
 {
 	SDL_Rect center;
 	center.x = config->video.screen_width / 2;
@@ -120,7 +120,7 @@ void flock_render(boid* flock, configuration* config, SDL_Surface* screen)
 	if(config->video.draw_anchor) SDL_BlitSurface(config->anchor_sprite, NULL, screen, &center);
 
 	int i;
-	for(i = 0; i < config->flock.num_boids; i++)
+	for(i = 0; i < config->flock.size; i++)
 	{
 		SDL_Rect offset;
 
@@ -131,6 +131,28 @@ void flock_render(boid* flock, configuration* config, SDL_Surface* screen)
 	}
 
 	SDL_Flip(screen);
+}
+
+void flock_render_gl(boid* flock, configuration* config, SDL_Surface* screen)
+{
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	int i;
+	for(i = 0; i < config->flock.size; i++)
+	{
+		glTranslatef(flock[i].location.x, flock[i].location.y, 0.0f);
+
+		glBegin(GL_QUADS);
+		glVertex3f(-2.0f, 2.0f, 0.0f);
+		glVertex3f( 2.0f, 2.0f, 0.0f);
+		glVertex3f( 2.0f,-2.0f, 0.0f);
+		glVertex3f(-2.0f,-2.0f, 0.0f);
+		glEnd();
+
+		glLoadIdentity();
+	}
+
+	SDL_GL_SwapBuffers();
 }
 
 void  flock_influence(vector* v, boid* flock, boid* b, configuration* config)
@@ -149,23 +171,23 @@ void  flock_influence(vector* v, boid* flock, boid* b, configuration* config)
 	for(i = 0; i < 2; i++)
 		vector_init_scalar(&influence[i], 0);
 
-	float neighborhood_radius_squared = pow(config->flock.neighborhood_radius, 2);
-	float min_boid_separation_squared = pow(config->flock.min_boid_separation, 2);
+	register float neighborhood_radius_squared = pow(config->flock.neighborhood_radius, 2);
+	register float min_boid_separation_squared = pow(config->flock.min_separation, 2);
 
-	for(i = 0; i < config->flock.num_boids; i++)
+	for(i = 0; i < config->flock.size; i++)
 	{
 		if(&flock[i] != b)
 		{
-			float distance = vector_distance_nosqrt(&flock[i].location, &b->location);
+			register float distance = vector_distance_nosqrt(&flock[i].location, &b->location);
 
-			if(distance < neighborhood_radius_squared)
+			if(distance <= neighborhood_radius_squared)
 			{
 				vector_add(&influence[0], &flock[i].velocity);
 				vector_add(&influence[0], &flock[i].location);
 
 				population[0] += 2;
 
-				if(distance < min_boid_separation_squared)
+				if(distance <= min_boid_separation_squared)
 				{
 					vector loc;
 					vector_copy(&loc, &b->location);
@@ -177,10 +199,10 @@ void  flock_influence(vector* v, boid* flock, boid* b, configuration* config)
 					vector_add(&influence[1], &loc);
 
 					population[1]++;
-                                }
-                        }
-                }
-        }
+				}
+			}
+		}
+	}
 
 	for(i = 0; i < 2; i++)
 	{
@@ -192,9 +214,9 @@ void  flock_influence(vector* v, boid* flock, boid* b, configuration* config)
 		if(vector_magnitude(&influence[i]) > 0)
 		{
 			vector_normalize(&influence[i]);
-			vector_mul_scalar(&influence[i], config->flock.max_boid_velocity);
+			vector_mul_scalar(&influence[i], config->flock.max_velocity);
 			vector_sub(&influence[i], &b->velocity);
-			vector_mul_scalar(&influence[i], config->flock.max_boid_steering_force);
+			vector_mul_scalar(&influence[i], config->flock.max_steering_force);
 		}
 	}
 

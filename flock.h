@@ -4,6 +4,9 @@
 #include "boid.h"
 #include "configuration.h"
 
+#include <GL/gl.h>
+#include <GL/glu.h>
+
 #define FLOCK_TYPE_RANDOM 0
 #define FLOCK_TYPE_CENTERED 1
 
@@ -18,8 +21,12 @@ int flock_update_worker(void* arg);
 // Update the location and velocity of each boid in the flock
 void flock_update(boid* flock, configuration* config, vector* cursor_pos, int* cursor_interaction);
 
-// Render the flock
-void flock_render(boid* flock, configuration* config, SDL_Surface* screen);
+// Flock render function pointer type
+typedef void (*render_func_t)(boid*, configuration*, SDL_Surface*);
+
+// Flock render functions
+void flock_render_software(boid* flock, configuration* config, SDL_Surface* screen);
+void flock_render_gl(boid* flock, configuration* config, SDL_Surface* screen);
 
 void flock_influence(vector* v, boid* flock, boid* b, configuration* config);
 
