@@ -1,7 +1,8 @@
 #include "config.h"
-#include <stdlib.h>
-
 #include "vector.h"
+
+#include <stdlib.h>
+#include <math.h>
 
 vector* vector_create(float x, float y, float z)
 {
@@ -109,7 +110,7 @@ float vector_distance(vector* a, vector* b)
 	register float yd = b->y - a->y;
 	register float zd = b->z - a->z;
 
-	return sqrt(xd * xd + yd * yd + zd * zd);
+	return sqrtf(xd * xd + yd * yd + zd * zd);
 }
 
 float vector_distance_nosqrt(vector* a, vector* b)
@@ -124,7 +125,7 @@ float vector_distance_nosqrt(vector* a, vector* b)
 
 float vector_magnitude(vector* v)
 {
-	return sqrt((v->x * v->x) + (v->y * v->y) + (v->z * v->z));
+	return sqrtf((v->x * v->x) + (v->y * v->y) + (v->z * v->z));
 }
 
 void vector_normalize(vector* v)

@@ -165,16 +165,16 @@ void  flock_influence(vector* v, boid* flock, boid* b, configuration* config)
 	influence[2] = separation */
 	vector influence[2];
 
-     /* The first population is a total of the boids within the neighborhood of the target boid.
-	The second population is a total of the boids infringing on the target boid's space.*/
-	int population[2];
-
 	int i;
 	for(i = 0; i < 2; i++)
 		vector_init_scalar(&influence[i], 0);
 
-	register float neighborhood_radius_squared = pow(config->flock.neighborhood_radius, 2);
-	register float min_boid_separation_squared = pow(config->flock.min_separation, 2);
+     /* The first population is a total of the boids within the neighborhood of the target boid.
+	The second population is a total of the boids infringing on the target boid's space.*/
+	int population[2] = {0, 0};
+
+	register float neighborhood_radius_squared = powf(config->flock.neighborhood_radius, 2);
+	register float min_boid_separation_squared = powf(config->flock.min_separation, 2);
 
 	for(i = 0; i < config->flock.size; i++)
 	{
