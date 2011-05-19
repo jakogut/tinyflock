@@ -47,11 +47,11 @@ int flock_update_worker(void* arg)
 			case 0:
 				break;
 			case 1:
-				if(vector_distance(&args->flock[i].location, args->cursor_pos) < 75)
+				if(vector_distance(&args->flock[i].location, args->cursor_pos) < args->config->input.influence_radius)
 					boid_approach(&args->flock[i], args->cursor_pos);
 				break;
 			case 2:
-				if(vector_distance(&args->flock[i].location, args->cursor_pos) < 50)
+				if(vector_distance(&args->flock[i].location, args->cursor_pos) < args->config->input.influence_radius)
 					boid_flee(&args->flock[i], args->cursor_pos);
 				break;
 			default:
@@ -141,14 +141,14 @@ void flock_render_gl(boid* flock, configuration* config, SDL_Surface* screen)
 	int i;
 	for(i = 0; i < config->flock.size; i++)
 	{
-		glTranslatef(flock[i].location.x, flock[i].location.y, 0.0f);
 		glColor3f(0.0f, 0.0f, 0.0f);
 
+		glTranslatef(flock[i].location.x, flock[i].location.y, 0.0f);
 		glBegin(GL_QUADS);
-		glVertex3f(-3.0f, 3.0f, 0.0f);
-		glVertex3f( 3.0f, 3.0f, 0.0f);
-		glVertex3f( 3.0f,-3.0f, 0.0f);
-		glVertex3f(-3.0f,-3.0f, 0.0f);
+			glVertex3f(-3.0f, 3.0f, 0.0f);
+			glVertex3f( 3.0f, 3.0f, 0.0f);
+			glVertex3f( 3.0f,-3.0f, 0.0f);
+			glVertex3f(-3.0f,-3.0f, 0.0f);
 		glEnd();
 
 		glLoadIdentity();

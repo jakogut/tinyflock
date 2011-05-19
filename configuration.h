@@ -19,6 +19,9 @@
 
 #define DRAW_ANCHOR 0
 
+// Default input settings
+#define INFLUENCE_RADIUS 75
+
 // Default boid parameters
 #define NUM_BOIDS 2048
 
@@ -26,6 +29,8 @@
 #define MIN_BOID_SEPARATION 3
 #define MAX_BOID_STEERING_FORCE 0.05
 #define NEIGHBORHOOD_RADIUS 25
+
+typedef struct{ unsigned char r, g, b; } color24_t;
 
 typedef struct
 {
@@ -45,6 +50,12 @@ typedef struct
 		int draw_anchor;
 
 	} video;
+
+	struct
+	{
+		float influence_radius;
+
+	} input;
 
 	struct
 	{

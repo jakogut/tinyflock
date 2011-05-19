@@ -100,6 +100,11 @@ int print_help()
 		"--draw-anchor\n"
 		"\tDisplay a visual anchor to prevent motion sickness\n\n"
 
+		"Input Configuration\n"
+		"------------------------------------------------------------\n"
+		"-ir | --influence-radius [pixels]\n\tSpecify the maximum distance from the cursor that"
+		"\n\twill influence boids.\n\n"
+
 		"Flock configuration\n"
 		"------------------------------------------------------------\n"
 		"-fc | --flock-count\n\tSpecify the number of boids to create.\n\n"
@@ -110,11 +115,12 @@ int print_help()
 		"Misc.\n"
 		"------------------------------------------------------------\n"
 		"-t | --num-threads\n\tSpecify the number of worker threads used to\n"
-		"\tcalculate boid movement.\n");
+		"\tcalculate boid movement.\n"
+	);
+
 	return 0;
 }
 
-//int main(int argc, char** argv)
 int main(int argc, char** argv)
 {
 	// Create a configuration object, and set the values to the defaults
@@ -128,6 +134,8 @@ int main(int argc, char** argv)
 	config.video.screen_depth = SCREEN_DEPTH;
 	config.video.frames_per_second = FPS;
 	config.video.draw_anchor = DRAW_ANCHOR;
+
+	config.input.influence_radius = INFLUENCE_RADIUS;
 
 	config.flock.size = NUM_BOIDS;
 	config.flock.max_velocity = MAX_BOID_VELOCITY;
@@ -153,6 +161,8 @@ int main(int argc, char** argv)
 			config.video.frames_per_second = atoi(argv[++i]);
 		else if(strcmp(argv[i], "--draw-anchor") == 0)
 			config.video.draw_anchor = 1 && ++i;
+		else if(strcmp(argv[i], "-ir") == 0 || strcmp(argv[i], "--influence-radius") == 0)
+			config.input.influence_radius = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-fc") == 0 || strcmp(argv[i], "--flock-count") == 0)
 			config.flock.size = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-fs") == 0 || strcmp(argv[i], "--flock-separation") == 0)
@@ -163,8 +173,9 @@ int main(int argc, char** argv)
 			config.flock.neighborhood_radius = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-t") == 0 || strcmp(argv[i], "--num-threads") == 0)
 			config.num_threads = atoi(argv[++i]);
-
 	}
+
+	srand(time(NULL));
 
 	// Init SDL and create our screen
 	if(SDL_Init(SDL_INIT_VIDEO) < 0) printf("Unable to initialize SDL. %s\n", SDL_GetError());
@@ -192,8 +203,6 @@ int main(int argc, char** argv)
 	config.anchor_sprite = SDL_DisplayFormatAlpha(temp);
 	SDL_FreeSurface(temp);
 
-	srand(time(NULL));
-
 	// Create our flock
 	boid* flock = create_flock(&config);
 
@@ -210,6 +219,9 @@ int main(int argc, char** argv)
 			render = &flock_render_gl;
 			break;
 	};
+
+
+
 	vector cursor_pos;
 	vector_init_scalar(&cursor_pos, 0);
 
