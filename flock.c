@@ -157,7 +157,7 @@ void flock_render_gl(boid* flock, configuration* config, SDL_Surface* screen)
 	SDL_GL_SwapBuffers();
 }
 
-void  flock_influence(vector* v, boid* flock, boid* b, configuration* config)
+void flock_influence(vector* v, boid* flock, boid* b, configuration* config)
 {
 	vector_init_scalar(v, 0);
 
@@ -184,24 +184,29 @@ void  flock_influence(vector* v, boid* flock, boid* b, configuration* config)
 
 			if(distance <= neighborhood_radius_squared)
 			{
-				vector_add(&influence[0], &flock[i].velocity);
+				vector temp;
+				vector_copy(&temp, &flock[i].velocity);
+
+				vector_mul_scalar(&temp, 0.2f);
+
+				vector_add(&influence[0], &temp);
 				vector_add(&influence[0], &flock[i].location);
 
 				population[0] += 2;
+			}
 
-				if(distance <= min_boid_separation_squared)
-				{
-					vector loc;
-					vector_copy(&loc, &b->location);
+			if(distance <= min_boid_separation_squared)
+			{
+				vector loc;
+				vector_copy(&loc, &b->location);
 
-					vector_sub(&loc, &flock[i].location);
-					vector_normalize(&loc);
-					vector_div_scalar(&loc, distance);
+				vector_sub(&loc, &flock[i].location);
+				vector_normalize(&loc);
+				vector_div_scalar(&loc, distance);
 
-					vector_add(&influence[1], &loc);
+				vector_add(&influence[1], &loc);
 
-					population[1]++;
-				}
+				population[1]++;
 			}
 		}
 	}

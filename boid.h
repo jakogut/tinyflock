@@ -6,6 +6,9 @@
 
 typedef struct
 {
+	// Apply flocking algorithm to boid
+	int flock;
+
 	// Where the boid is on the screen
 	vector location;
 
