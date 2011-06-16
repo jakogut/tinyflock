@@ -30,9 +30,8 @@ void flock_render_gl(boid* flock, configuration* config, SDL_Surface* screen);
 
 void flock_influence(vector* v, boid* flock, boid* b, configuration* config);
 
-inline void boid_approach(boid* b, vector* v);
-
-inline void boid_flee(boid* b, vector* v);
+inline void boid_approach(boid* b, vector* v, float weight);
+inline void boid_flee(boid* b, vector* v, float weight);
 
 inline float rand_range(float min, float max);
 

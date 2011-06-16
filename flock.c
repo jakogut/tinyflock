@@ -48,11 +48,11 @@ int flock_update_worker(void* arg)
 				break;
 			case 1:
 				if(vector_distance(&args->flock[i].location, args->cursor_pos) < args->config->input.influence_radius)
-					boid_approach(&args->flock[i], args->cursor_pos);
+					boid_approach(&args->flock[i], args->cursor_pos, 1.5);
 				break;
 			case 2:
 				if(vector_distance(&args->flock[i].location, args->cursor_pos) < args->config->input.influence_radius)
-					boid_flee(&args->flock[i], args->cursor_pos);
+					boid_flee(&args->flock[i], args->cursor_pos, 1.0);
 				break;
 			default:
 				break;
@@ -231,24 +231,28 @@ void flock_influence(vector* v, boid* flock, boid* b, configuration* config)
 		vector_add(v, &influence[i]);
 }
 
-void boid_approach(boid* b, vector* v)
+void boid_approach(boid* b, vector* v, float weight)
 {
 	vector heading;
 	vector_copy(&heading, v);
 	vector_sub(&heading, &b->location);
 
 	vector_normalize(&heading);
+
+	vector_mul_scalar(&heading, weight);
 
 	vector_add(&b->acceleration, &heading);
 }
 
-void boid_flee(boid* b, vector* v)
+void boid_flee(boid* b, vector* v, float weight)
 {
 	vector heading;
 	vector_copy(&heading, v);
 	vector_sub(&heading, &b->location);
 
 	vector_normalize(&heading);
+
+	vector_mul_scalar(&heading, weight);
 
 	vector_sub(&b->acceleration, &heading);
 }
