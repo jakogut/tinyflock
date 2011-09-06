@@ -15,7 +15,6 @@ AC_PROG_CC
 
 # Checks for libraries.
 PKG_CHECK_MODULES([SDL], [sdl])
-PKG_CHECK_MODULES([SDL_image], [SDL_image])
 PKG_CHECK_MODULES([GL], [gl])
 PKG_CHECK_MODULES([GLU], [glu])
 

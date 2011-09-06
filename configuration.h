@@ -6,18 +6,12 @@
 // Number of worker threads used to update boids
 #define NUM_THREADS 4
 
-// Renderer types
-#define RENDERER_SOFTWARE 0
-#define RENDERER_GL 1
-
 // Default video configuration
 #define SCREEN_WIDTH    1280
 #define SCREEN_HEIGHT   720
 #define SCREEN_DEPTH    32
 
 #define FPS 0
-
-#define DRAW_ANCHOR 0
 
 // Default input settings
 #define INFLUENCE_RADIUS 100
@@ -41,8 +35,6 @@ typedef struct
 
 	struct
 	{
-		int renderer;
-
 		int screen_width, screen_height, screen_depth;
 
 		int frames_per_second;

@@ -109,31 +109,6 @@ void flock_update(boid* flock, configuration* config, vector* cursor_pos, int* c
 	free(workers);
 }
 
-void flock_render_software(boid* flock, configuration* config, SDL_Surface* screen)
-{
-	SDL_Rect center;
-	center.x = config->video.screen_width / 2;
-	center.y = config->video.screen_height / 2;
-
-	uint32_t white = SDL_MapRGB(screen->format, 0xff, 0xff, 0xff);
-	SDL_FillRect(screen, NULL, white);
-
-	if(config->video.draw_anchor) SDL_BlitSurface(config->anchor_sprite, NULL, screen, &center);
-
-	int i;
-	for(i = 0; i < config->flock.size; i++)
-	{
-		SDL_Rect offset;
-
-		offset.x = flock[i].location.x;
-		offset.y = flock[i].location.y;
-
-		SDL_BlitSurface(config->boid_sprite, NULL, screen, &offset);
-	}
-
-	SDL_Flip(screen);
-}
-
 void flock_render_gl(boid* flock, configuration* config, SDL_Surface* screen)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
