@@ -15,11 +15,11 @@ boid* create_flock(configuration* config);
 void destroy_flock(boid* flock);
 
 typedef struct { int thread_id; boid* flock; boid* flock_copy; configuration* config; vector* cursor_pos; int* cursor_interaction; } flock_update_worker_args;
-
+typedef struct { int* run; boid* flock; configuration* config; vector* cursor_pos; int* cursor_interaction; } flock_update_args;
 int flock_update_worker(void* arg);
 
 // Update the location and velocity of each boid in the flock
-void flock_update(boid* flock, configuration* config, vector* cursor_pos, int* cursor_interaction);
+int flock_update(void* arg);
 
 // Flock render function pointer type
 typedef void (*render_func_t)(boid*, configuration*, SDL_Surface*);

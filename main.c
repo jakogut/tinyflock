@@ -58,7 +58,11 @@ void init_gl(int width, int height)
 	glClearColor(255.0f, 255.0f, 255.0f, 0.0f);
 	glClearDepth(1.0);
 	glDepthFunc(GL_LESS);
+
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glEnable(GL_LINE_SMOOTH);
+
 	glShadeModel(GL_SMOOTH);
 
 	glMatrixMode(GL_PROJECTION);
@@ -193,6 +197,9 @@ int main(int argc, char** argv)
 	int cursor_interaction = 0;
 	int run = 1;
 
+	flock_update_args update_args = {&run, flock, &config, &cursor_pos, &cursor_interaction };
+	SDL_Thread* update = SDL_CreateThread(flock_update, (void*)&update_args);
+
 	// If the frame limit is not greater than 0, don't delay between frames at all.
 	if(config.video.frames_per_second > 0)
 	{
@@ -201,8 +208,6 @@ int main(int argc, char** argv)
 		while(run)
 		{
 			run = handle_events(&event, &cursor_pos, &cursor_interaction);
-
-			flock_update(flock, &config, &cursor_pos, &cursor_interaction);
 			flock_render_gl(flock, &config, screen);
 
 			SDL_Delay(delay);
@@ -213,11 +218,11 @@ int main(int argc, char** argv)
 		while(run)
 		{
 			run = handle_events(&event, &cursor_pos, &cursor_interaction);
-
-			flock_update(flock, &config, &cursor_pos, &cursor_interaction);
 			flock_render_gl(flock, &config, screen);
 		}
 	}
+
+	SDL_WaitThread(update, NULL);
 
 	destroy_flock(flock);
 	SDL_Quit();

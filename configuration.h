@@ -11,7 +11,8 @@
 #define SCREEN_HEIGHT   720
 #define SCREEN_DEPTH    32
 
-#define FPS 0
+// Limiting the frame rate to 50 helps free the processor for updates
+#define FPS 50
 
 // Default input settings
 #define INFLUENCE_RADIUS 100

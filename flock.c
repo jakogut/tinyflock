@@ -79,34 +79,43 @@ int flock_update_worker(void* arg)
 	return 0;
 }
 
-void flock_update(boid* flock, configuration* config, vector* cursor_pos, int* cursor_interaction)
+int flock_update(void* arg)
 {
-	SDL_Thread** workers = malloc(sizeof(SDL_Thread*) * config->num_threads);
+	flock_update_args* args = (flock_update_args*)arg;
 
-	flock_update_worker_args* worker_args = malloc(sizeof(flock_update_worker_args) * config->num_threads);
+	SDL_Thread** workers = malloc(sizeof(SDL_Thread*) * args->config->num_threads);
+	flock_update_worker_args* worker_args = malloc(sizeof(flock_update_worker_args) * args->config->num_threads);
 
-	boid* flock_copy = malloc(sizeof(boid) * config->flock.size);
-	memcpy(flock_copy, flock, sizeof(boid) * config->flock.size);
+	boid* flock_copy = malloc(sizeof(boid) * args->config->flock.size);
 
 	int i;
-	for(i = 0; i < config->num_threads; i++)
+	for(i = 0; i < args->config->num_threads; i++)
 	{
 		worker_args[i].thread_id = i;
-		worker_args[i].flock = flock;
+		worker_args[i].flock = args->flock;
 		worker_args[i].flock_copy = flock_copy;
-		worker_args[i].config = config;
-		worker_args[i].cursor_pos = cursor_pos;
-		worker_args[i].cursor_interaction = cursor_interaction;
-
-		workers[i] = SDL_CreateThread(flock_update_worker, (void*)&worker_args[i]);
+		worker_args[i].config = args->config;
+		worker_args[i].cursor_pos = args->cursor_pos;
+		worker_args[i].cursor_interaction = args->cursor_interaction;
 	}
 
-	for(i = 0; i < config->num_threads; i++)
-		SDL_WaitThread(workers[i], NULL);
+	while(*args->run)
+	{
+		memcpy(flock_copy, args->flock, sizeof(boid) * args->config->flock.size);
+
+		for(i = 0; i < args->config->num_threads; i++)
+			workers[i] = SDL_CreateThread(flock_update_worker, (void*)&worker_args[i]);
+
+		for(i = 0; i < args->config->num_threads; i++)
+			SDL_WaitThread(workers[i], NULL);
+
+	}
 
 	free(worker_args);
 	free(flock_copy);
 	free(workers);
+
+	return 0;
 }
 
 void flock_render_gl(boid* flock, configuration* config, SDL_Surface* screen)
