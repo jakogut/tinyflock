@@ -20,7 +20,7 @@
 #define DRAW_ANCHOR 0
 
 // Default input settings
-#define INFLUENCE_RADIUS 75
+#define INFLUENCE_RADIUS 100
 
 // Default boid parameters
 #define NUM_BOIDS 2048

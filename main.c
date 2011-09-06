@@ -128,7 +128,7 @@ int main(int argc, char** argv)
 
 	config.num_threads = NUM_THREADS;
 
-	config.video.renderer = RENDERER_SOFTWARE;
+	config.video.renderer = RENDERER_GL;
 	config.video.screen_width = SCREEN_WIDTH;
 	config.video.screen_height = SCREEN_HEIGHT;
 	config.video.screen_depth = SCREEN_DEPTH;
@@ -149,8 +149,8 @@ int main(int argc, char** argv)
 	{
 		if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
 			return print_help();
-		else if((strcmp(argv[i], "-r") == 0 || strcmp(argv[i], "--renderer") == 0) && strcmp(argv[++i], "gl") == 0)
-			config.video.renderer = RENDERER_GL;
+		else if((strcmp(argv[i], "-r") == 0 || strcmp(argv[i], "--renderer") == 0) && strcmp(argv[++i], "software") == 0)
+			config.video.renderer = RENDERER_SOFTWARE;
 		else if(strcmp(argv[i], "--width") == 0)
 			config.video.screen_width = atoi(argv[++i]);
 		else if(strcmp(argv[i], "--height") == 0)
