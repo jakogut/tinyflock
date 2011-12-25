@@ -11,6 +11,7 @@
 
 #include "flock.h"
 #include "boid.h"
+#include "render.h"
 
 #include "configuration.h"
 
@@ -62,6 +63,8 @@ void init_gl(int width, int height)
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glEnable(GL_LINE_SMOOTH);
+
+	glLineWidth(0.2f);
 
 	glShadeModel(GL_SMOOTH);
 
@@ -197,8 +200,14 @@ int main(int argc, char** argv)
 	int cursor_interaction = 0;
 	int run = 1;
 
-	flock_update_args update_args = {&run, flock, &config, &cursor_pos, &cursor_interaction };
-	SDL_Thread* update = SDL_CreateThread(flock_update, (void*)&update_args);
+	int update_count = 0;
+	int frame_count = 0;
+
+	flock_update_args update_args = {&run, flock, &config, &cursor_pos, &cursor_interaction, &update_count };
+	SDL_Thread* update = SDL_CreateThread(flock_update_thread, (void*)&update_args);
+
+	status_args stat_args = {&run, &frame_count, &update_count};
+	SDL_Thread* status = SDL_CreateThread(status_thread, (void*)&stat_args);
 
 	// If the frame limit is not greater than 0, don't delay between frames at all.
 	if(config.video.frames_per_second > 0)
@@ -208,9 +217,10 @@ int main(int argc, char** argv)
 		while(run)
 		{
 			run = handle_events(&event, &cursor_pos, &cursor_interaction);
-			flock_render_gl(flock, &config, screen);
+			flock_render(flock, &config, screen);
 
 			SDL_Delay(delay);
+			frame_count++;
 		}
 	}
 	else
@@ -218,11 +228,13 @@ int main(int argc, char** argv)
 		while(run)
 		{
 			run = handle_events(&event, &cursor_pos, &cursor_interaction);
-			flock_render_gl(flock, &config, screen);
+			flock_render(flock, &config, screen);
+			frame_count++;
 		}
 	}
 
 	SDL_WaitThread(update, NULL);
+	SDL_WaitThread(status, NULL);
 
 	destroy_flock(flock);
 	SDL_Quit();

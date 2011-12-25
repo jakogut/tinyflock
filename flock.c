@@ -2,14 +2,12 @@
 
 boid* create_flock(configuration* config)
 {
-	boid* flock;
-
-	flock = malloc(sizeof(boid) * config->flock.size);
+	boid* flock = malloc(sizeof(boid) * config->flock.size);
 
 	int i;
 	for(i = 0; i < config->flock.size; i++)
 	{
-		// We add 0.0001 * i to the position of each boid so they don't spawn on top of each other.
+		// We add 0.0001 * i to the x and y coordinates of each boid so they don't spawn on top of each other.
 		init_boid(&flock[i], (0.0001 * i), (0.0001 * i),
 				     rand_range((0.0f - config->flock.max_velocity), config->flock.max_velocity),
 				     rand_range((0.0f - config->flock.max_velocity), config->flock.max_velocity));
@@ -21,12 +19,54 @@ boid* create_flock(configuration* config)
 void destroy_flock(boid* flock)
 {
 	if(flock) free(flock);
-
 	flock = NULL;
 }
 
+int status_thread(void* arg)
+{
+	status_args* args = (status_args*)arg;
+	uint32_t start_time_fps = SDL_GetTicks(), start_time_ups = SDL_GetTicks();
+	uint32_t start_fcount = *args->frame_count, start_ucount = *args->update_count;
 
-int flock_update_worker(void* arg)
+	int sample_size = 10;
+
+	int last_fps = 0, current_fps = 0;
+	int last_ups = 0, current_ups = 0;
+
+	while(*args->run)
+	{
+		if(*args->frame_count >= (start_fcount + sample_size))
+		{
+			int end_time = SDL_GetTicks();
+
+			last_fps = current_fps;
+			current_fps = 1000 / ((end_time - start_time_fps) / sample_size);
+			current_fps = (last_fps * 0.2) + (current_fps * 0.8);
+
+			start_fcount = *args->frame_count;
+			start_time_fps = SDL_GetTicks();
+		}
+
+		if(*args->update_count >= (start_ucount + sample_size))
+		{
+			int end_time = SDL_GetTicks();
+
+			last_ups = current_ups;
+			current_ups = 1000 / ((end_time - start_time_ups) / sample_size);
+			current_ups = (last_ups * 0.2) + (current_ups * 0.8);
+
+			start_ucount = *args->update_count;
+			start_time_ups = SDL_GetTicks();
+		}
+
+		printf("\rFrames per second: %i, Updates per second: %i ", current_fps, current_ups);
+		fflush(stdout);
+	}
+
+	printf("\n");
+}
+
+int flock_update_worker_thread(void* arg)
 {
 	flock_update_worker_args* args = (flock_update_worker_args*)arg;
 
@@ -44,18 +84,12 @@ int flock_update_worker(void* arg)
 		// Handle mouse input
 		switch(*args->cursor_interaction)
 		{
-			case 0:
-				break;
-			case 1:
-				if(vector_distance(&args->flock[i].location, args->cursor_pos) < args->config->input.influence_radius)
-					boid_approach(&args->flock[i], args->cursor_pos, 1.5);
-				break;
-			case 2:
-				if(vector_distance(&args->flock[i].location, args->cursor_pos) < args->config->input.influence_radius)
-					boid_flee(&args->flock[i], args->cursor_pos, 1.0);
-				break;
-			default:
-				break;
+			case 0: break;
+			case 1: if(vector_distance(&args->flock[i].location, args->cursor_pos) < args->config->input.influence_radius)
+					boid_approach(&args->flock[i], args->cursor_pos, 1.5); break;
+			case 2: if(vector_distance(&args->flock[i].location, args->cursor_pos) < args->config->input.influence_radius)
+					boid_flee(&args->flock[i], args->cursor_pos, 1.0); break;
+			default: break;
 		};
 
 		vector_add(&args->flock[i].velocity, &args->flock[i].acceleration);
@@ -64,22 +98,18 @@ int flock_update_worker(void* arg)
 		// Reset the acceleration vectors for the flock
 		vector_init_scalar(&args->flock[i].acceleration, 0.0);
 
-		// If the boid goes off the screen, wrap the location around to the other side
-		if(args->flock[i].location.x >= args->config->video.screen_width)
-			args->flock[i].location.x = 0;
-		else if(args->flock[i].location.x <= 0)
-			args->flock[i].location.x = args->config->video.screen_width;
+		// Wrap coordinates
+		args->flock[i].location.x -= args->config->video.screen_width * (args->flock[i].location.x > args->config->video.screen_width);
+		args->flock[i].location.x += args->config->video.screen_width * (args->flock[i].location.x < 0);
 
-		else if(args->flock[i].location.y >= args->config->video.screen_height)
-			args->flock[i].location.y = 0;
-		else if(args->flock[i].location.y <= 0)
-			args->flock[i].location.y = args->config->video.screen_height;
+		args->flock[i].location.y -= args->config->video.screen_height * (args->flock[i].location.y > args->config->video.screen_height);
+		args->flock[i].location.y += args->config->video.screen_height * (args->flock[i].location.y < 0);
 	}
 
 	return 0;
 }
 
-int flock_update(void* arg)
+int flock_update_thread(void* arg)
 {
 	flock_update_args* args = (flock_update_args*)arg;
 
@@ -90,25 +120,19 @@ int flock_update(void* arg)
 
 	int i;
 	for(i = 0; i < args->config->num_threads; i++)
-	{
-		worker_args[i].thread_id = i;
-		worker_args[i].flock = args->flock;
-		worker_args[i].flock_copy = flock_copy;
-		worker_args[i].config = args->config;
-		worker_args[i].cursor_pos = args->cursor_pos;
-		worker_args[i].cursor_interaction = args->cursor_interaction;
-	}
+		worker_args[i] = (flock_update_worker_args){i, args->flock, flock_copy, args->config, args->cursor_pos, args->cursor_interaction};
 
 	while(*args->run)
 	{
 		memcpy(flock_copy, args->flock, sizeof(boid) * args->config->flock.size);
 
 		for(i = 0; i < args->config->num_threads; i++)
-			workers[i] = SDL_CreateThread(flock_update_worker, (void*)&worker_args[i]);
+			workers[i] = SDL_CreateThread(flock_update_worker_thread, (void*)&worker_args[i]);
 
 		for(i = 0; i < args->config->num_threads; i++)
 			SDL_WaitThread(workers[i], NULL);
 
+		*args->update_count++;
 	}
 
 	free(worker_args);
@@ -116,26 +140,6 @@ int flock_update(void* arg)
 	free(workers);
 
 	return 0;
-}
-
-void flock_render_gl(boid* flock, configuration* config, SDL_Surface* screen)
-{
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	int i;
-	for(i = 0; i < config->flock.size; i++)
-	{
-		glColor3f(0.0f, 0.0f, 0.0f);
-
-		glBegin(GL_LINES);
-			glVertex3f(flock[i].location.x, flock[i].location.y, 0.0f);
-			glVertex3f((flock[i].location.x - flock[i].velocity.x), (flock[i].location.y - flock[i].velocity.y), 0.0f);
-		glEnd();
-
-		glLoadIdentity();
-	}
-
-	SDL_GL_SwapBuffers();
 }
 
 void flock_influence(vector* v, boid* flock, boid* b, configuration* config)
