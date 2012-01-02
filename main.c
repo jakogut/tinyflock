@@ -210,27 +210,15 @@ int main(int argc, char** argv)
 	SDL_Thread* status = SDL_CreateThread(status_thread, (void*)&stat_args);
 
 	// If the frame limit is not greater than 0, don't delay between frames at all.
-	if(config.video.frames_per_second > 0)
-	{
-		float delay = (1000 / config.video.frames_per_second);
+	float delay = (1000 / config.video.frames_per_second);
 
-		while(run)
-		{
-			run = handle_events(&event, &cursor_pos, &cursor_interaction);
-			flock_render(flock, &config, screen);
-
-			SDL_Delay(delay);
-			frame_count++;
-		}
-	}
-	else
+	while(run)
 	{
-		while(run)
-		{
-			run = handle_events(&event, &cursor_pos, &cursor_interaction);
-			flock_render(flock, &config, screen);
-			frame_count++;
-		}
+		run = handle_events(&event, &cursor_pos, &cursor_interaction);
+		flock_render(flock, &config, screen);
+
+		SDL_Delay(delay);
+		frame_count++;
 	}
 
 	SDL_WaitThread(update, NULL);

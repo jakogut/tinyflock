@@ -41,7 +41,7 @@ int status_thread(void* arg)
 
 			last_fps = current_fps;
 			current_fps = 1000 / ((end_time - start_time_fps) / sample_size);
-			current_fps = (last_fps * 0.2) + (current_fps * 0.8);
+			current_fps = (last_fps * 0.8) + (current_fps * 0.2);
 
 			start_fcount = *args->frame_count;
 			start_time_fps = SDL_GetTicks();
@@ -53,7 +53,7 @@ int status_thread(void* arg)
 
 			last_ups = current_ups;
 			current_ups = 1000 / ((end_time - start_time_ups) / sample_size);
-			current_ups = (last_ups * 0.2) + (current_ups * 0.8);
+			current_ups = (last_ups * 0.8) + (current_ups * 0.2);
 
 			start_ucount = *args->update_count;
 			start_time_ups = SDL_GetTicks();
@@ -132,7 +132,7 @@ int flock_update_thread(void* arg)
 		for(i = 0; i < args->config->num_threads; i++)
 			SDL_WaitThread(workers[i], NULL);
 
-		*args->update_count++;
+		*args->update_count += args->config->num_threads;
 	}
 
 	free(worker_args);
