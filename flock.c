@@ -64,6 +64,8 @@ int status_thread(void* arg)
 	}
 
 	printf("\n");
+
+	return 0;
 }
 
 int flock_update_worker_thread(void* arg)
