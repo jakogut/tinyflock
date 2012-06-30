@@ -129,10 +129,13 @@ float vector_magnitude(vector* v)
 
 void vector_normalize(vector* v)
 {
-	float magnitude = vector_magnitude(v);
+	float magnitude = vector_magnitude(v), z = 0;
 
 	if(magnitude > 0)
-		vector_div_scalar(v, magnitude);
+	{
+		z = powf(magnitude, 0.5f);
+		vector_div_scalar(v, z);
+	}
 }
 
 void vector_clamp(vector* v, vector* min, vector* max)

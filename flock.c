@@ -189,11 +189,10 @@ void flock_influence(vector* v, flock* f, int boid_id, configuration* config)
 			{
 				vector temp;
 				vector_copy(&temp, &f->velocity[i]);
-
-				vector_mul_scalar(&temp, 0.2f);
+				//vector_add(&influence[0], &f->location[i]);
+				vector_normalize(&temp);
 
 				vector_add(&influence[0], &temp);
-				vector_add(&influence[0], &f->location[i]);
 
 				population[0] += 2;
 			}
