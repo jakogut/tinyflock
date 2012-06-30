@@ -1,11 +1,11 @@
 #ifndef FLOCK_H_
 #define FLOCK_H_
 
-#include "vector.h"
-#include "configuration.h"
-
 #include <GL/gl.h>
 #include <GL/glu.h>
+
+#include "vector.h"
+#include "configuration.h"
 
 typedef struct
 {
