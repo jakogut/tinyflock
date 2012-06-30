@@ -10,7 +10,6 @@
 #include <GL/glu.h>
 
 #include "flock.h"
-#include "boid.h"
 #include "render.h"
 
 #include "configuration.h"
@@ -190,7 +189,7 @@ int main(int argc, char** argv)
 	SDL_WM_SetCaption("tinyflock", NULL);
 
 	// Create our flock
-	boid* flock = create_flock(&config);
+	flock* f = create_flock(&config);
 
 	init_gl(config.video.screen_width, config.video.screen_height);
 
@@ -203,10 +202,10 @@ int main(int argc, char** argv)
 	int update_count = 0;
 	int frame_count = 0;
 
-	flock_update_args update_args = {&run, flock, &config, &cursor_pos, &cursor_interaction, &update_count };
+	flock_update_args update_args = { &run, f, &config, &cursor_pos, &cursor_interaction, &update_count };
 	SDL_Thread* update = SDL_CreateThread(flock_update_thread, (void*)&update_args);
 
-	status_args stat_args = {&run, &frame_count, &update_count};
+	status_args stat_args = { &run, &frame_count, &update_count };
 	SDL_Thread* status = SDL_CreateThread(status_thread, (void*)&stat_args);
 
 	// If the frame limit is not greater than 0, don't delay between frames at all.
@@ -215,7 +214,7 @@ int main(int argc, char** argv)
 	while(run)
 	{
 		run = handle_events(&event, &cursor_pos, &cursor_interaction);
-		flock_render(flock, &config, screen);
+		flock_render(f, &config, screen);
 
 		SDL_Delay(delay);
 		frame_count++;
@@ -224,7 +223,7 @@ int main(int argc, char** argv)
 	SDL_WaitThread(update, NULL);
 	SDL_WaitThread(status, NULL);
 
-	destroy_flock(flock);
+	destroy_flock(f);
 	SDL_Quit();
 
 	return 0;
