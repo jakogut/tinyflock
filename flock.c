@@ -14,8 +14,8 @@ flock* create_flock(configuration* config)
 	for(i = 0; i < config->flock.size; i++)
 	{
 		// We add 0.0001 * i to the x and y coordinates of each boid so they don't spawn on top of each other.
-		f->location[i].x = 0.0001 * i;
-		f->location[i].y = 0.0001 * i;
+		f->location[i].x = rand_range(0.0f, config->video.screen_width);
+		f->location[i].y = rand_range(0.0f, config->video.screen_height);
 		f->location[i].z = 0;
 
 		f->velocity[i].x = rand_range((0.0f - config->flock.max_velocity), config->flock.max_velocity);
@@ -185,28 +185,25 @@ void flock_influence(vector* v, flock* f, int boid_id, configuration* config)
 		{
 			register float distance = vector_distance_nosqrt(&f->location[i], &f->location[boid_id]);
 
+			vector temp;
 			if(distance <= neighborhood_radius_squared)
 			{
-				vector temp;
 				vector_copy(&temp, &f->velocity[i]);
-				//vector_add(&influence[0], &f->location[i]);
 				vector_normalize(&temp);
-
 				vector_add(&influence[0], &temp);
 
-				population[0] += 2;
+				population[0]++;
 			}
 
 			if(distance <= min_boid_separation_squared)
 			{
-				vector loc;
-				vector_copy(&loc, &f->location[boid_id]);
+				vector_copy(&temp, &f->location[boid_id]);
 
-				vector_sub(&loc, &f->location[i]);
-				vector_normalize(&loc);
-				vector_div_scalar(&loc, distance);
+				vector_sub(&temp, &f->location[i]);
+				vector_normalize(&temp);
+				vector_div_scalar(&temp, powf(distance, distance));
 
-				vector_add(&influence[1], &loc);
+				vector_add(&influence[1], &temp);
 
 				population[1]++;
 			}

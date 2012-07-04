@@ -20,9 +20,9 @@
 // Default boid parameters
 #define NUM_BOIDS 2048
 
-#define MAX_BOID_VELOCITY 10
+#define MAX_BOID_VELOCITY 7.5
 #define MIN_BOID_SEPARATION 3
-#define MAX_BOID_STEERING_FORCE 0.05
+#define MAX_BOID_STEERING_FORCE 1
 #define NEIGHBORHOOD_RADIUS 25
 
 typedef struct
@@ -47,10 +47,10 @@ typedef struct
 	{
 		int size;
 
-		int max_velocity;
-		int min_separation;
+		float max_velocity;
 		float max_steering_force;
 		int neighborhood_radius;
+		int min_separation;
 
 	} flock;
 
