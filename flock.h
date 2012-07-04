@@ -20,7 +20,7 @@ void destroy_flock(flock* f);
 typedef struct { int* run; int* frame_count; int* update_count; } status_args;
 int status_thread(void* arg);
 
-typedef struct { int thread_id; flock* f; flock* fcopy; configuration* config; vector* cursor_pos; int* cursor_interaction; } flock_update_worker_args;
+typedef struct { int thread_id; flock* f; configuration* config; vector* cursor_pos; int* cursor_interaction; } flock_update_worker_args;
 int flock_update_worker_thread(void* arg);
 
 // Update the location and velocity of each boid in the flock

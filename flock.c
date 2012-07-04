@@ -94,7 +94,7 @@ int flock_update_worker_thread(void* arg)
 	for(i = begin_work; i < end_work; i++)
 	{
 		// Calculate boid movement
-		flock_influence(&args->f->acceleration[i], args->fcopy, i, args->config);
+		flock_influence(&args->f->acceleration[i], args->f, i, args->config);
 
 		// Handle mouse input
 		switch(*args->cursor_interaction)
@@ -131,18 +131,12 @@ int flock_update_thread(void* arg)
 	SDL_Thread** workers = malloc(sizeof(SDL_Thread*) * args->config->num_threads);
 	flock_update_worker_args* worker_args = malloc(sizeof(flock_update_worker_args) * args->config->num_threads);
 
-	flock* fcopy = create_flock(args->config);
-
 	int i;
 	for(i = 0; i < args->config->num_threads; i++)
-		worker_args[i] = (flock_update_worker_args){i, args->f, fcopy, args->config, args->cursor_pos, args->cursor_interaction};
+		worker_args[i] = (flock_update_worker_args){i, args->f, args->config, args->cursor_pos, args->cursor_interaction};
 
 	while(*args->run)
 	{
-		memcpy(fcopy->location, args->f->location, sizeof(vector) * args->config->flock.size);
-		memcpy(fcopy->velocity, args->f->velocity, sizeof(vector) * args->config->flock.size);
-		memcpy(fcopy->acceleration, args->f->acceleration, sizeof(vector) * args->config->flock.size);
-
 		for(i = 0; i < args->config->num_threads; i++)
 			workers[i] = SDL_CreateThread(flock_update_worker_thread, (void*)&worker_args[i]);
 
@@ -154,8 +148,6 @@ int flock_update_thread(void* arg)
 
 	free(worker_args);
 	free(workers);
-
-	destroy_flock(fcopy);
 
 	return 0;
 }
@@ -201,7 +193,7 @@ void flock_influence(vector* v, flock* f, int boid_id, configuration* config)
 
 				vector_sub(&temp, &f->location[i]);
 				vector_normalize(&temp);
-				vector_div_scalar(&temp, powf(distance, distance));
+				//vector_div_scalar(&temp, powf(distance, 3);
 
 				vector_add(&influence[1], &temp);
 
