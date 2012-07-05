@@ -13,7 +13,6 @@ flock* create_flock(configuration* config)
 	int i;
 	for(i = 0; i < config->flock.size; i++)
 	{
-		// We add 0.0001 * i to the x and y coordinates of each boid so they don't spawn on top of each other.
 		f->location[i].x = rand_range(0.0f, config->video.screen_width);
 		f->location[i].y = rand_range(0.0f, config->video.screen_height);
 		f->location[i].z = 0;
@@ -101,9 +100,9 @@ int flock_update_worker_thread(void* arg)
 		{
 			case 0: break;
 			case 1: if(vector_distance(&args->f->location[i], args->cursor_pos) < args->config->input.influence_radius)
-					boid_approach(args->f, i, args->cursor_pos, 1.5); break;
+					boid_approach(args->f, i, args->cursor_pos, args->config->flock.max_velocity / 4); break;
 			case 2: if(vector_distance(&args->f->location[i], args->cursor_pos) < args->config->input.influence_radius)
-					boid_flee(args->f, i, args->cursor_pos, 1.0); break;
+					boid_flee(args->f, i, args->cursor_pos, args->config->flock.max_velocity / 4); break;
 			default: break;
 		};
 
