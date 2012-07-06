@@ -1,15 +1,6 @@
-If you cloned the the git repostory, 
-generate the configure script by running
-
-	autoreconf -i
-
-Run the configure script, and to build, run
+To build, run
 
 	make
-
-To install, as root run
-
-	make install
 
 To clean all the intermediate build files, run
 
