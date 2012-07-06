@@ -1,11 +1,14 @@
-To build, run
+To build on most unix platforms, run
 
 	make
+
+To build on OS X, run
+
+	make tinyflock-osx
 
 To clean all the intermediate build files, run
 
 	make clean
-
 
 To see what arguments the application will accept, run
 
@@ -14,3 +17,4 @@ To see what arguments the application will accept, run
 The demo is interactive using the mouse (left button to attract boids,
 right to make them flee), as well as command line arguments, which are 
 documented and viewable by running the program with the "-h" flag.
+
