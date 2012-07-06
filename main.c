@@ -6,9 +6,6 @@
 #include <SDL/SDL.h>
 #include <SDL/SDL_thread.h>
 
-#include <GL/gl.h>
-#include <GL/glu.h>
-
 #include "flock.h"
 #include "render.h"
 
