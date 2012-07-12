@@ -3,7 +3,7 @@ AS = as
 
 CFLAGS = -Wall -pipe -Iinclude/
 OFLAGS = 
-LFLAGS = $(CFLAGS) -Llib/ -lm
+LFLAGS = $(CFLAGS) -lm
 ASFLAGS =
 PEDANTIC_FLAGS = -ansi -pedantic -pedantic-errors
 
