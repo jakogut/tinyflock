@@ -1,10 +1,9 @@
 CC = gcc
-AS = as
+LD = gold
 
 CFLAGS = -Wall -pipe -Iinclude/
 OFLAGS = 
 LFLAGS = $(CFLAGS) -lm
-ASFLAGS =
 PEDANTIC_FLAGS = -ansi -pedantic -pedantic-errors
 
 SOURCES = $(wildcard *.c)
@@ -34,20 +33,6 @@ CFLAGS += $(OPTIMIZATION)
 
 all: tinyflock
 
-install: libtvm tvmi
-	cp -f $(BIN_DIR)/tvmi $(INSTALL_PREFIX)/bin/
-	cp -rf $(INC_DIR)/tvm $(INSTALL_PREFIX)/include/
-	cp -f $(LIB_DIR)/libtvm* $(INSTALL_PREFIX)/lib/
-
-uninstall:
-	rm -rf /usr/bin/tvmi
-	rm -rf /usr/include/tvmi
-	rm -rf /usr/lib/libtvm*
-
-libtvm: $(LIBTVM_OBJECTS)
-	ar rcs $(LIB_DIR)/libtvm.a $(LIBTVM_OBJECTS)
-
-# Build the TVM interpreter
 tinyflock: $(OBJECTS)
 	$(CC) $(LFLAGS) $(OBJECTS) -lSDL -lGL -o tinyflock
 
