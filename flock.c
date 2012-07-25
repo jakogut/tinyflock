@@ -2,7 +2,7 @@
 
 #include <math.h>
 
-flock* create_flock(configuration* config)
+flock* flock_create(configuration* config)
 {
 	flock* f = malloc(sizeof(flock));
 
@@ -25,7 +25,7 @@ flock* create_flock(configuration* config)
 	return f;
 }
 
-void destroy_flock(flock* f)
+void flock_destroy(flock* f)
 {
 	free(f->location);
 	free(f->acceleration);

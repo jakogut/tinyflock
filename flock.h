@@ -14,8 +14,10 @@ typedef struct
 	vector* acceleration;
 } flock;
 
-flock* create_flock(configuration* config);
-void destroy_flock(flock* f);
+flock* flock_create(configuration* config);
+void flock_destroy(flock* f);
+
+void flock_randomize(flock* f, int start, int end);
 
 typedef struct { int* run; int* frame_count; int* update_count; } status_args;
 int status_thread(void* arg);

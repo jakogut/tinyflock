@@ -186,7 +186,7 @@ int main(int argc, char** argv)
 	SDL_WM_SetCaption("tinyflock", NULL);
 
 	// Create our flock
-	flock* f = create_flock(&config);
+	flock* f = flock_create(&config);
 
 	init_gl(config.video.screen_width, config.video.screen_height);
 
@@ -220,7 +220,7 @@ int main(int argc, char** argv)
 	SDL_WaitThread(update, NULL);
 	SDL_WaitThread(status, NULL);
 
-	destroy_flock(f);
+	flock_destroy(f);
 	SDL_Quit();
 
 	return 0;
