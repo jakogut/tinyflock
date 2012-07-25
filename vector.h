@@ -11,15 +11,11 @@ typedef struct
 
 vector* vector_create(float x, float y, float z);
 
-inline void vector_randomize(vector* v, float min, float max);
+void vector_destroy(vector* v);
 
 void vector_copy(vector* dest, vector* src);
 
-void vector_destroy(vector* v);
-
-inline void vector_init(vector* v, float x, float y, float z);
-
-inline void vector_init_scalar(vector* v, float init);
+void vector_zero(vector* v);
 
 /* The performance of these vector instructions could be improved on x86 using hand-coded SSE intrinsics,
 though the compiler may do that itself. */

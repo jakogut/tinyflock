@@ -14,18 +14,9 @@ vector* vector_create(float x, float y, float z)
 	return v;
 }
 
-void vector_randomize(vector* v, float min, float max)
+void vector_destroy(vector* v)
 {
-	float range = max - min;
-
-	v->x = (rand() / (float)RAND_MAX) * range;
-	v->x += min;
-
-	v->y = (rand() / (float)RAND_MAX) * range;
-	v->y += min;
-
-	v->z = (rand() / (float)RAND_MAX) * range;
-	v->z += min;
+	free(v);
 }
 
 void vector_copy(vector* dest, vector* src)
@@ -35,23 +26,11 @@ void vector_copy(vector* dest, vector* src)
 	dest->z = src->z;
 }
 
-void vector_destroy(vector* v)
+void vector_zero(vector* v)
 {
-	free(v);
-}
-
-void vector_init(vector* v, float x, float y, float z)
-{
-	v->x = x;
-	v->y = y;
-	v->z = z;
-}
-
-void vector_init_scalar(vector* v, float init)
-{
-	v->x = init;
-	v->y = init;
-	v->z = init;
+	v->x = 0;
+	v->y = 0;
+	v->z = 0;
 }
 
 void vector_add(vector* a, vector* b)

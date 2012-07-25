@@ -191,7 +191,7 @@ int main(int argc, char** argv)
 	init_gl(config.video.screen_width, config.video.screen_height);
 
 	vector cursor_pos;
-	vector_init_scalar(&cursor_pos, 0);
+	vector_zero(&cursor_pos);
 
 	int cursor_interaction = 0;
 	int run = 1;

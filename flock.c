@@ -110,7 +110,7 @@ int flock_update_worker_thread(void* arg)
 		vector_add(&args->f->location[i], &args->f->velocity[i]);
 
 		// Reset the acceleration vectors for the flock
-		vector_init_scalar(&args->f->acceleration[i], 0.0);
+		vector_zero(&args->f->acceleration[i]);
 
 		// Wrap coordinates
 		args->f->location[i].x -= args->config->video.screen_width * (args->f->location[i].x > args->config->video.screen_width);
@@ -153,15 +153,13 @@ int flock_update_thread(void* arg)
 
 void flock_influence(vector* v, flock* f, int boid_id, configuration* config)
 {
-	vector_init_scalar(v, 0);
-
      /* influence[0] = alignment & cohesion,
 	influence[2] = separation */
 	vector influence[2];
 
 	int i;
 	for(i = 0; i < 2; i++)
-		vector_init_scalar(&influence[i], 0);
+		vector_zero(&influence[i]);
 
      /* The first population is a total of the boids within the neighborhood of the target boid.
 	The second population is a total of the boids infringing on the target boid's space.*/
