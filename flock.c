@@ -172,53 +172,42 @@ void flock_influence(vector* v, flock* f, int boid_id, configuration* config)
 
 	for(i = 0; i < config->flock.size; i++)
 	{
-		if(i != boid_id)
+		register float distance = vector_distance_nosqrt(&f->location[i], &f->location[boid_id]);
+
+		vector temp;
+		if(distance <= min_boid_separation_squared)
 		{
-			register float distance = vector_distance_nosqrt(&f->location[i], &f->location[boid_id]);
+			vector_copy(&temp, &f->location[boid_id]);
+			vector_sub(&temp, &f->location[i]);
+			vector_normalize(&temp);
+			vector_add(&influence[1], &temp);
 
-			vector temp;
-			if(distance <= neighborhood_radius_squared)
-			{
-				vector_copy(&temp, &f->velocity[i]);
-				vector_normalize(&temp);
-				vector_add(&influence[0], &temp);
+			population[1]++;
+		}
+		else if(distance <= neighborhood_radius_squared)
+		{
+			vector_copy(&temp, &f->velocity[i]);
+			vector_normalize(&temp);
+			vector_add(&influence[0], &temp);
 
-				population[0]++;
-			}
-
-			if(distance <= min_boid_separation_squared)
-			{
-				vector_copy(&temp, &f->location[boid_id]);
-
-				vector_sub(&temp, &f->location[i]);
-				vector_normalize(&temp);
-				//vector_div_scalar(&temp, powf(distance, 3);
-
-				vector_add(&influence[1], &temp);
-
-				population[1]++;
-			}
+			population[0]++;
 		}
 	}
 
 	for(i = 0; i < 2; i++)
 	{
-		if(population[i] > 0)
-			vector_div_scalar(&influence[i], population[i]);
-		else
-			vector_init_scalar(&influence[i], 0);
-
 		if(vector_magnitude(&influence[i]) > 0)
 		{
+			vector_div_scalar(&influence[i], population[i]);
+
 			vector_normalize(&influence[i]);
 			vector_mul_scalar(&influence[i], config->flock.max_velocity);
 			vector_sub(&influence[i], &f->velocity[boid_id]);
 			vector_mul_scalar(&influence[i], config->flock.max_steering_force);
+
+			vector_add(v, &influence[i]);
 		}
 	}
-
-	for(i = 0; i < 2; i++)
-		vector_add(v, &influence[i]);
 }
 
 void boid_approach(flock* f, int boid_id, vector* v, float weight)
