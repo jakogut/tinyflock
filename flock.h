@@ -29,9 +29,9 @@ int flock_update_thread(void* arg);
 
 void flock_influence(vector* v, flock* f, int boid_id, configuration* config);
 
-inline void boid_approach(flock* f, int boid_id, vector* v, float weight);
-inline void boid_flee(flock* f, int boid_id, vector* v, float weight);
+void boid_approach(flock* f, int boid_id, vector* v, float weight);
+void boid_flee(flock* f, int boid_id, vector* v, float weight);
 
-inline float rand_range(float min, float max);
+float rand_range(float min, float max);
 
 #endif
