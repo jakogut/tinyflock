@@ -2,6 +2,12 @@
 
 #include <math.h>
 
+// Fraction of the flock each boid considers when calculating flocking influence
+#define FRACTIONAL_INFLUENCE 0.6
+
+int fractional_flock_size;
+int* flock_sample;
+
 flock* flock_create(configuration* config)
 {
 	flock* f = malloc(sizeof(flock));
@@ -128,6 +134,12 @@ int flock_update_thread(void* arg)
 	SDL_Thread** workers = malloc(sizeof(SDL_Thread*) * args->config->num_threads);
 	flock_update_worker_args* worker_args = malloc(sizeof(flock_update_worker_args) * args->config->num_threads);
 
+	fractional_flock_size = args->config->flock.size * FRACTIONAL_INFLUENCE;
+	flock_sample = calloc(sizeof(int), fractional_flock_size);
+
+	for(int i = 0; i < fractional_flock_size; i++)
+		flock_sample[i] = rand() % args->config->flock.size;
+
 	for(int i = 0; i < args->config->num_threads; i++)
 		worker_args[i] = (flock_update_worker_args){i, args->f, args->config, args->cursor_pos, args->cursor_interaction};
 
@@ -141,6 +153,8 @@ int flock_update_thread(void* arg)
 
 		*args->update_count += args->config->num_threads;
 	}
+
+	free(flock_sample);
 
 	free(worker_args);
 	free(workers);
@@ -164,8 +178,9 @@ void flock_influence(vector* v, flock* f, int boid_id, configuration* config)
 	register float neighborhood_radius_squared = powf(config->flock.neighborhood_radius, 2);
 	register float min_boid_separation_squared = powf(config->flock.min_separation, 2);
 
-	for(int i = 0; i < config->flock.size; i++)
+	for(int idx = 0; idx < fractional_flock_size; idx++)
 	{
+		int i = flock_sample[idx];
 		register float distance = vector_distance_nosqrt(&f->location[i], &f->location[boid_id]);
 
 		vector temp;

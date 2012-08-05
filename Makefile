@@ -18,7 +18,7 @@ ifeq ($(DEBUG), yes)
 endif
 
 ifeq ($(PROFILE), yes)
-	CFLAGS += -pg -DPROFILE
+	CFLAGS += -g -pg -DPROFILE
 endif
 
 CFLAGS += $(OPTIMIZATION)
