@@ -7,8 +7,7 @@ void flock_render(flock* f, configuration* config, SDL_Surface* screen)
 
 	glColor3f(0.0f, 0.0f, 0.0f);
 
-	int i;
-	for(i = 0; i < config->flock.size; i++)
+	for(int i = 0; i < config->flock.size; i++)
 	{
 
 		glBegin(GL_LINES);

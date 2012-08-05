@@ -1,32 +1,24 @@
-CC = gcc
-LD = gold
+CC = c99
+LD = gcc
 
 CFLAGS = -Wall -pipe -Iinclude/
 OFLAGS = 
-LFLAGS = $(CFLAGS) -lm
-PEDANTIC_FLAGS = -ansi -pedantic -pedantic-errors
+LFLAGS = -lm -lc -lSDL -lGL
 
 SOURCES = $(wildcard *.c)
 OBJECTS = $(SOURCES:.c=.o)
 
-BIN_DIR =
-
 DEBUG = no
 PROFILE = no
-PEDANTIC = no
 OPTIMIZATION = -O3
 
 ifeq ($(DEBUG), yes)
-	CFLAGS += -g
+	CFLAGS += -g -DDEBUG
 	OPTIMIZATION = -O0
 endif
 
 ifeq ($(PROFILE), yes)
-	CFLAGS += -pg
-endif
-
-ifeq ($(PEDANTIC), yes)
-	CFLAGS += $(PEDANTIC_FLAGS)
+	CFLAGS += -pg -DPROFILE
 endif
 
 CFLAGS += $(OPTIMIZATION)
@@ -34,7 +26,7 @@ CFLAGS += $(OPTIMIZATION)
 all: tinyflock
 
 tinyflock: $(OBJECTS)
-	$(CC) $(LFLAGS) $(OBJECTS) -lSDL -lGL -o tinyflock
+	$(LD) $(LFLAGS) $(OBJECTS) -o tinyflock
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
