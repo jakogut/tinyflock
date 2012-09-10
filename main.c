@@ -18,7 +18,7 @@ int key_pressed(SDL_Event* event, int key)
 }
 
 // Handle input and events. Return 0 to quit the program, or 1 to keep running.
-inline int handle_events(SDL_Event* event, vec3_t* cursor_pos, int* cursor_interaction)
+int handle_events(SDL_Event* event, vec3_t* cursor_pos, int* cursor_interaction)
 {
 	while(SDL_PollEvent(event))
 	{
@@ -190,7 +190,7 @@ int main(int argc, char** argv)
 	init_gl(config.video.screen_width, config.video.screen_height);
 
 	vec3_t cursor_pos;
-	vector_zero(&cursor_pos);
+	vec3_zero(cursor_pos);
 
 	int cursor_interaction = 0;
 	int run = 1;

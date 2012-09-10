@@ -1,5 +1,5 @@
-CC = c99
-LD = gcc
+CC = clang
+LD = $(CC)
 
 CFLAGS = -Wall -pipe -Iinclude/
 OFLAGS = 

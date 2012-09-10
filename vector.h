@@ -19,37 +19,38 @@ typedef union
 
 } vec3_t;
 
-vec3_t* vec3_create();
 
-void vec2_destroy(vec2_t* v);
-void vec3_destroy(vec3_t* v);
+#define vec3_copy(dest, src) { dest.xyz[0] = src.xyz[0]; dest.xyz[1] = src.xyz[1]; dest.xyz[2] = src.xyz[2]; }
+#define vec3_zero(v) { memset(v.xyz, 0, sizeof(vec_t) * 3); }
 
-void vector_copy(vec3_t* dest, vec3_t* src);
+#define vec3_magnitude_squared(v) ((v.xyz[0] * v.xyz[0]) + (v.xyz[1] * v.xyz[1]) + (v.xyz[2] * v.xyz[2]))
+#define vec3_magnitude(v) (sqrtf(vec3_magnitude_squared(v)))
 
-void vector_zero(vec3_t* v);
+#define vec3_add(a, b) { a.xyz[0] += b.xyz[0]; a.xyz[1] += b.xyz[1]; a.xyz[2] += b.xyz[2]; }
+#define vec3_sub(a, b) { a.xyz[0] -= b.xyz[0]; a.xyz[1] -= b.xyz[1]; a.xyz[2] -= b.xyz[2]; }
+#define vec3_sub_scalar(a, b) { a.xyz[0] -= b; a.xyz[1] -= b; a.xyz[2] -= b; }
+#define vec3_mul(a, b) { a.xyz[0] *= b.xyz[0]; a.xyz[1] *= b.xyz[1]; a.xyz[2] *= b.xyz[2]; }
+#define vec3_mul_scalar(a, b) { a.xyz[0] *= b; a.xyz[1] *= b; a.xyz[2] *= b; }
+#define vec3_div(a, b) { a.xyz[0] /= b.xyz[0]; a.xyz[1] /= b.xyz[1]; a.xyz[2] /= b.xyz[2]; }
+#define vec3_div_scalar(a, b) { a.xyz[0] /= b; a.xyz[1] /= b; a.xyz[2] /= b; }
 
-/* The performance of these vector instructions could be improved on x86 using hand-coded SSE intrinsics,
-though the compiler may do that itself. */
-void vector_add(vec3_t* a, vec3_t* b);
-
-void vector_sub(vec3_t* a, vec3_t* b);
-
-void vector_sub_scalar(vec3_t* a, float b);
-
-void vector_mul(vec3_t* a, vec3_t* b);
-
-void vector_mul_scalar(vec3_t* a, float b);
-
-void vector_div(vec3_t* a, vec3_t* b);
-
-void vector_div_scalar(vec3_t* v, float divisor);
-
-float vector_distance(vec3_t* a, vec3_t* b);
-
-float vector_distance_nosqrt(vec3_t* a, vec3_t* b);
-
-float vector_magnitude(vec3_t* v);
+vec_t vector_magnitude(vec3_t* v);
 
 void vector_normalize(vec3_t* v);
+void vec3_normalize(vec3_t v);
+
+inline vec_t vec3_distance_squared(vec3_t a, vec3_t b)
+{
+	register vec_t 	xd = b.scalars.x - a.scalars.x,
+			yd = b.scalars.y - a.scalars.y,
+			zd = b.scalars.z - a.scalars.z;
+
+	return ((xd * xd) + (yd * yd) + (zd * zd));
+}
+
+inline vec_t vec3_distance(vec3_t a, vec3_t b)
+{
+	return sqrtf(vec3_distance_squared(a, b));
+}
 
 #endif

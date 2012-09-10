@@ -3,7 +3,7 @@
 #include <math.h>
 
 // Fraction of the flock each boid considers when calculating flocking influence
-#define FRACTIONAL_INFLUENCE 1
+#define FRACTIONAL_INFLUENCE 0.33
 
 int fractional_flock_size;
 int* flock_sample;
@@ -103,18 +103,18 @@ int flock_update_worker_thread(void* arg)
 		switch(*args->cursor_interaction)
 		{
 			case 0: break;
-			case 1: if(vector_distance(&args->f->location[i], args->cursor_pos) < args->config->input.influence_radius)
-					boid_approach(args->f, i, args->cursor_pos, args->config->flock.max_velocity / 4); break;
-			case 2: if(vector_distance(&args->f->location[i], args->cursor_pos) < args->config->input.influence_radius)
-					boid_flee(args->f, i, args->cursor_pos, args->config->flock.max_velocity / 4); break;
+			case 1: if(vec3_distance(args->f->location[i], *args->cursor_pos) < args->config->input.influence_radius)
+					boid_approach(args->f, i, *args->cursor_pos, args->config->flock.max_velocity / 4); break;
+			case 2: if(vec3_distance(args->f->location[i], *args->cursor_pos) < args->config->input.influence_radius)
+					boid_flee(args->f, i, *args->cursor_pos, args->config->flock.max_velocity / 4); break;
 			default: break;
 		};
 
-		vector_add(&args->f->velocity[i], &args->f->acceleration[i]);
-		vector_add(&args->f->location[i], &args->f->velocity[i]);
+		vec3_add(args->f->velocity[i], args->f->acceleration[i]);
+		vec3_add(args->f->location[i], args->f->velocity[i]);
 
 		// Reset the acceleration vectors for the flock
-		vector_zero(&args->f->acceleration[i]);
+		vec3_zero(args->f->acceleration[i]);
 
 		// Wrap coordinates
 		args->f->location[i].scalars.x -= args->config->video.screen_width * (args->f->location[i].scalars.x > args->config->video.screen_width);
@@ -169,7 +169,7 @@ void flock_influence(vec3_t* v, flock* f, int boid_id, configuration* config)
 	vec3_t influence[2];
 
 	for(int i = 0; i < 2; i++)
-		vector_zero(&influence[i]);
+		vec3_zero(influence[i]);
 
      /* The first population is a total of the boids within the neighborhood of the target boid.
 	The second population is a total of the boids infringing on the target boid's space.*/
@@ -181,23 +181,26 @@ void flock_influence(vec3_t* v, flock* f, int boid_id, configuration* config)
 	for(int idx = 0; idx < fractional_flock_size; idx++)
 	{
 		int i = flock_sample[idx];
-		register float distance = vector_distance_nosqrt(&f->location[i], &f->location[boid_id]);
+		register float distance = vec3_distance_squared(f->location[i], f->location[boid_id]);
 
 		vec3_t temp;
 		if(distance <= min_boid_separation_squared)
 		{
-			vector_copy(&temp, &f->location[boid_id]);
-			vector_sub(&temp, &f->location[i]);
+			vec3_copy(temp, f->location[boid_id]);
+			vec3_sub(temp, f->location[i]);
 			vector_normalize(&temp);
-			vector_add(&influence[1], &temp);
+
+			vec3_add(influence[1], temp);
 
 			population[1]++;
 		}
 		else if(distance <= neighborhood_radius_squared)
 		{
-			vector_copy(&temp, &f->velocity[i]);
+			vec3_copy(temp, f->velocity[i]);
+			//vec3_add(temp, f->location[i]);
 			vector_normalize(&temp);
-			vector_add(&influence[0], &temp);
+
+			vec3_add(influence[0], temp);
 
 			population[0]++;
 		}
@@ -205,44 +208,44 @@ void flock_influence(vec3_t* v, flock* f, int boid_id, configuration* config)
 
 	for(int i = 0; i < 2; i++)
 	{
-		if(vector_magnitude(&influence[i]) > 0)
+		if(vec3_magnitude(influence[i]) > 0)
 		{
-			vector_div_scalar(&influence[i], population[i]);
+			vec3_div_scalar(influence[i], population[i]);
 
 			vector_normalize(&influence[i]);
-			vector_mul_scalar(&influence[i], config->flock.max_velocity);
-			vector_sub(&influence[i], &f->velocity[boid_id]);
-			vector_mul_scalar(&influence[i], config->flock.max_steering_force);
+			vec3_mul_scalar(influence[i], config->flock.max_velocity);
+			vec3_sub(influence[i], f->velocity[boid_id]);
+			vec3_mul_scalar(influence[i], config->flock.max_steering_force);
 
-			vector_add(v, &influence[i]);
+			for(int j = 0; j < 3; j++) v->xyz[j] += influence[i].xyz[j];
 		}
 	}
 }
 
-void boid_approach(flock* f, int boid_id, vec3_t* v, float weight)
+void boid_approach(flock* f, int boid_id, vec3_t v, float weight)
 {
 	vec3_t heading;
-	vector_copy(&heading, v);
-	vector_sub(&heading, &f->location[boid_id]);
+	vec3_copy(heading, v);
+	vec3_sub(heading, f->location[boid_id]);
 
 	vector_normalize(&heading);
 
-	vector_mul_scalar(&heading, weight);
+	vec3_mul_scalar(heading, weight);
 
-	vector_add(&f->acceleration[boid_id], &heading);
+	vec3_add(f->acceleration[boid_id], heading);
 }
 
-void boid_flee(flock* f, int boid_id, vec3_t* v, float weight)
+void boid_flee(flock* f, int boid_id, vec3_t v, float weight)
 {
 	vec3_t heading;
-	vector_copy(&heading, v);
-	vector_sub(&heading, &f->location[boid_id]);
+	vec3_copy(heading, v);
+	vec3_sub(heading, f->location[boid_id]);
 
 	vector_normalize(&heading);
 
-	vector_mul_scalar(&heading, weight);
+	vec3_mul_scalar(heading, weight);
 
-	vector_sub(&f->acceleration[boid_id], &heading);
+	vec3_sub(f->acceleration[boid_id], heading);
 }
 
 float rand_range(float min, float max)
