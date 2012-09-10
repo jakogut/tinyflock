@@ -14,7 +14,6 @@ OPTIMIZATION = -O3
 
 ifeq ($(DEBUG), yes)
 	CFLAGS += -g -DDEBUG
-	OPTIMIZATION = -O0
 endif
 
 ifeq ($(PROFILE), yes)

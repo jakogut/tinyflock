@@ -3,7 +3,7 @@
 
 #include <math.h>
 
-typedef float vec_t;
+typedef double vec_t;
 
 typedef union
 {

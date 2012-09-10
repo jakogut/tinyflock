@@ -15,15 +15,15 @@
 #define FPS 60
 
 // Default input settings
-#define INFLUENCE_RADIUS 100
+#define INFLUENCE_RADIUS 150
 
 // Default boid parameters
-#define NUM_BOIDS 2048
+#define NUM_BOIDS 4096
 
-#define MAX_BOID_VELOCITY 7.5
-#define MIN_BOID_SEPARATION 3
-#define MAX_BOID_STEERING_FORCE 0.8
-#define NEIGHBORHOOD_RADIUS 25
+#define MAX_BOID_VELOCITY 8
+#define MIN_BOID_SEPARATION 5
+#define MAX_BOID_STEERING_FORCE 0.6
+#define NEIGHBORHOOD_RADIUS 30
 
 typedef struct
 {
