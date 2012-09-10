@@ -3,7 +3,7 @@
 #include <math.h>
 
 // Fraction of the flock each boid considers when calculating flocking influence
-#define FRACTIONAL_INFLUENCE 0.33
+#define FRACTIONAL_INFLUENCE 0.50
 
 int fractional_flock_size;
 int* flock_sample;
@@ -183,26 +183,37 @@ void flock_influence(vec3_t* v, flock* f, int boid_id, configuration* config)
 		int i = flock_sample[idx];
 		register float distance = vec3_distance_squared(f->location[i], f->location[boid_id]);
 
-		vec3_t temp;
+		vec3_t heading;
 		if(distance <= min_boid_separation_squared)
 		{
-			vec3_copy(temp, f->location[boid_id]);
-			vec3_sub(temp, f->location[i]);
-			vector_normalize(&temp);
+			// Separation
+			vec3_copy(heading, f->location[i]);
+			vec3_sub(heading, f->location[boid_id]);
+			vec3_normalize(&heading);
 
-			vec3_add(influence[1], temp);
+			vec3_sub(influence[1], heading);
 
 			population[1]++;
 		}
 		else if(distance <= neighborhood_radius_squared)
 		{
-			vec3_copy(temp, f->velocity[i]);
-			//vec3_add(temp, f->location[i]);
-			vector_normalize(&temp);
+			// Alignment
+			vec3_copy(heading, f->velocity[i]);
+			vec3_normalize(&heading);
 
-			vec3_add(influence[0], temp);
+			vec3_add(influence[0], heading);
 
-			population[0]++;
+			// Cohesion
+			vec3_copy(heading, f->location[i]);
+			vec3_sub(heading, f->location[boid_id]);
+			vec3_normalize(&heading);
+
+			// The cohesion is much too strong without weighting
+			vec3_mul_scalar(heading, 0.1);
+
+			vec3_add(influence[0], heading);
+
+			population[0] += 2;
 		}
 	}
 
@@ -212,7 +223,7 @@ void flock_influence(vec3_t* v, flock* f, int boid_id, configuration* config)
 		{
 			vec3_div_scalar(influence[i], population[i]);
 
-			vector_normalize(&influence[i]);
+			vec3_normalize(&influence[i]);
 			vec3_mul_scalar(influence[i], config->flock.max_velocity);
 			vec3_sub(influence[i], f->velocity[boid_id]);
 			vec3_mul_scalar(influence[i], config->flock.max_steering_force);
@@ -228,7 +239,7 @@ void boid_approach(flock* f, int boid_id, vec3_t v, float weight)
 	vec3_copy(heading, v);
 	vec3_sub(heading, f->location[boid_id]);
 
-	vector_normalize(&heading);
+	vec3_normalize(&heading);
 
 	vec3_mul_scalar(heading, weight);
 
@@ -241,7 +252,7 @@ void boid_flee(flock* f, int boid_id, vec3_t v, float weight)
 	vec3_copy(heading, v);
 	vec3_sub(heading, f->location[boid_id]);
 
-	vector_normalize(&heading);
+	vec3_normalize(&heading);
 
 	vec3_mul_scalar(heading, weight);
 
