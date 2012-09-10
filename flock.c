@@ -3,29 +3,29 @@
 #include <math.h>
 
 // Fraction of the flock each boid considers when calculating flocking influence
-#define FRACTIONAL_INFLUENCE 0.6
+#define FRACTIONAL_INFLUENCE 1
 
 int fractional_flock_size;
 int* flock_sample;
 
 flock* flock_create(configuration* config)
 {
-	flock* f = malloc(sizeof(flock));
+	flock* f = calloc(1, sizeof(flock));
 
-	f->location = malloc(sizeof(vector) * config->flock.size);
-	f->acceleration = malloc(sizeof(vector) * config->flock.size);
-	f->velocity = malloc(sizeof(vector) * config->flock.size);
+	f->location = calloc(config->flock.size, sizeof(vec3_t));
+	f->acceleration = calloc(config->flock.size, sizeof(vec3_t));
+	f->velocity = calloc(config->flock.size, sizeof(vec3_t));
 
 	for(int i = 0; i < config->flock.size; i++)
 	{
-		f->location[i].x = rand_range(0.0f, config->video.screen_width);
-		f->location[i].y = rand_range(0.0f, config->video.screen_height);
-		f->location[i].z = 0;
+		f->location[i].scalars.x = rand_range(0.0f, config->video.screen_width);
+		f->location[i].scalars.y = rand_range(0.0f, config->video.screen_height);
+		f->location[i].scalars.z = 0;
 
-		f->velocity[i].x = rand_range((0.0f - config->flock.max_velocity), config->flock.max_velocity);
-		f->velocity[i].y = rand_range((0.0f - config->flock.max_velocity), config->flock.max_velocity);
-
-        }
+		f->velocity[i].scalars.x = rand_range((0.0f - config->flock.max_velocity), config->flock.max_velocity);
+		f->velocity[i].scalars.y = rand_range((0.0f - config->flock.max_velocity), config->flock.max_velocity);
+		f->velocity[i].scalars.z = 0;
+	}
 
 	return f;
 }
@@ -117,11 +117,11 @@ int flock_update_worker_thread(void* arg)
 		vector_zero(&args->f->acceleration[i]);
 
 		// Wrap coordinates
-		args->f->location[i].x -= args->config->video.screen_width * (args->f->location[i].x > args->config->video.screen_width);
-		args->f->location[i].x += args->config->video.screen_width * (args->f->location[i].x < 0);
+		args->f->location[i].scalars.x -= args->config->video.screen_width * (args->f->location[i].scalars.x > args->config->video.screen_width);
+		args->f->location[i].scalars.x += args->config->video.screen_width * (args->f->location[i].scalars.x < 0);
 
-		args->f->location[i].y -= args->config->video.screen_height * (args->f->location[i].y > args->config->video.screen_height);
-		args->f->location[i].y += args->config->video.screen_height * (args->f->location[i].y < 0);
+		args->f->location[i].scalars.y -= args->config->video.screen_height * (args->f->location[i].scalars.y > args->config->video.screen_height);
+		args->f->location[i].scalars.y += args->config->video.screen_height * (args->f->location[i].scalars.y < 0);
 	}
 
 	return 0;
@@ -162,11 +162,11 @@ int flock_update_thread(void* arg)
 	return 0;
 }
 
-void flock_influence(vector* v, flock* f, int boid_id, configuration* config)
+void flock_influence(vec3_t* v, flock* f, int boid_id, configuration* config)
 {
      /* influence[0] = alignment & cohesion,
 	influence[2] = separation */
-	vector influence[2];
+	vec3_t influence[2];
 
 	for(int i = 0; i < 2; i++)
 		vector_zero(&influence[i]);
@@ -183,7 +183,7 @@ void flock_influence(vector* v, flock* f, int boid_id, configuration* config)
 		int i = flock_sample[idx];
 		register float distance = vector_distance_nosqrt(&f->location[i], &f->location[boid_id]);
 
-		vector temp;
+		vec3_t temp;
 		if(distance <= min_boid_separation_squared)
 		{
 			vector_copy(&temp, &f->location[boid_id]);
@@ -219,9 +219,9 @@ void flock_influence(vector* v, flock* f, int boid_id, configuration* config)
 	}
 }
 
-void boid_approach(flock* f, int boid_id, vector* v, float weight)
+void boid_approach(flock* f, int boid_id, vec3_t* v, float weight)
 {
-	vector heading;
+	vec3_t heading;
 	vector_copy(&heading, v);
 	vector_sub(&heading, &f->location[boid_id]);
 
@@ -232,9 +232,9 @@ void boid_approach(flock* f, int boid_id, vector* v, float weight)
 	vector_add(&f->acceleration[boid_id], &heading);
 }
 
-void boid_flee(flock* f, int boid_id, vector* v, float weight)
+void boid_flee(flock* f, int boid_id, vec3_t* v, float weight)
 {
-	vector heading;
+	vec3_t heading;
 	vector_copy(&heading, v);
 	vector_sub(&heading, &f->location[boid_id]);
 

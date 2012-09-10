@@ -11,8 +11,8 @@ void flock_render(flock* f, configuration* config, SDL_Surface* screen)
 	{
 
 		glBegin(GL_LINES);
-			glVertex3f(f->location[i].x, f->location[i].y, 0.0f);
-			glVertex3f((f->location[i].x - f->velocity[i].x), (f->location[i].y - f->velocity[i].y), 0.0f);
+			glVertex3f(f->location[i].scalars.x, f->location[i].scalars.y, 0.0f);
+			glVertex3f((f->location[i].scalars.x - f->velocity[i].scalars.x), (f->location[i].scalars.y - f->velocity[i].scalars.y), 0.0f);
 		glEnd();
 	}
 

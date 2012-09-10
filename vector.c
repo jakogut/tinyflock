@@ -1,112 +1,111 @@
 #include "vector.h"
 
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 
-vector* vector_create(float x, float y, float z)
+vec3_t* vec3_create()
 {
-	vector* v = malloc(sizeof(vector));
-
-	v->x = x;
-	v->y = y;
-	v->z = z;
+	vec3_t* v = calloc(1, sizeof(vec3_t));
 
 	return v;
 }
 
-void vector_destroy(vector* v)
+
+void vec2_destroy(vec2_t* v)
 {
 	free(v);
 }
 
-void vector_copy(vector* dest, vector* src)
+void vec3_destroy(vec3_t* v)
 {
-	dest->x = src->x;
-	dest->y = src->y;
-	dest->z = src->z;
+	free(v);
 }
 
-void vector_zero(vector* v)
+void vector_copy(vec3_t* dest, vec3_t* src)
 {
-	v->x = 0;
-	v->y = 0;
-	v->z = 0;
+	memcpy(dest->xyz, src->xyz, sizeof(vec_t) * 3);
 }
 
-void vector_add(vector* a, vector* b)
+void vector_zero(vec3_t* v)
 {
-	a->x += b->x;
-	a->y += b->y;
-	a->z += b->z;
+	memset(v->xyz, 0, sizeof(vec_t) * 3);
 }
 
-void vector_sub(vector* a, vector* b)
+void vector_add(vec3_t* a, vec3_t* b)
 {
-	a->x -= b->x;
-	a->y -= b->y;
-	a->z -= b->z;
+	a->scalars.x += b->scalars.x;
+	a->scalars.y += b->scalars.y;
+	a->scalars.z += b->scalars.z;
 }
 
-void vector_sub_scalar(vector* a, float b)
+void vector_sub(vec3_t* a, vec3_t* b)
 {
-	a->x -= b;
-	a->y -= b;
-	a->z -= b;
+	a->scalars.x -= b->scalars.x;
+	a->scalars.y -= b->scalars.y;
+	a->scalars.z -= b->scalars.z;
 }
 
-void vector_mul(vector* a, vector* b)
+void vector_sub_scalar(vec3_t* a, float b)
 {
-	a->x *= b->x;
-	a->y *= b->y;
-	a->z *= b->z;
+	a->scalars.x -= b;
+	a->scalars.y -= b;
+	a->scalars.z -= b;
 }
 
-void vector_mul_scalar(vector* a, float b)
+void vector_mul(vec3_t* a, vec3_t* b)
 {
-	a->x *= b;
-	a->y *= b;
-	a->z *= b;
+	a->scalars.x *= b->scalars.x;
+	a->scalars.y *= b->scalars.y;
+	a->scalars.z *= b->scalars.z;
 }
 
-void vector_div(vector* a, vector* b)
+void vector_mul_scalar(vec3_t* a, float b)
 {
-	a->x /= b->x;
-	a->y /= b->y;
-	a->z /= b->z;
+	a->scalars.x *= b;
+	a->scalars.y *= b;
+	a->scalars.z *= b;
 }
 
-void vector_div_scalar(vector* v, float divisor)
+void vector_div(vec3_t* a, vec3_t* b)
 {
-	v->x /= divisor;
-	v->y /= divisor;
-	v->z /= divisor;
+	a->scalars.x /= b->scalars.x;
+	a->scalars.y /= b->scalars.y;
+	a->scalars.z /= b->scalars.z;
 }
 
-float vector_distance(vector* a, vector* b)
+void vector_div_scalar(vec3_t* v, float divisor)
 {
-	register float xd = b->x - a->x;
-	register float yd = b->y - a->y;
-	register float zd = b->z - a->z;
+	v->scalars.x /= divisor;
+	v->scalars.y /= divisor;
+	v->scalars.z /= divisor;
+}
+
+float vector_distance(vec3_t* a, vec3_t* b)
+{
+	register float xd = b->scalars.x - a->scalars.x;
+	register float yd = b->scalars.y - a->scalars.y;
+	register float zd = b->scalars.z - a->scalars.z;
 
 	return sqrtf(xd * xd + yd * yd + zd * zd);
 }
 
-float vector_distance_nosqrt(vector* a, vector* b)
+float vector_distance_nosqrt(vec3_t* a, vec3_t* b)
 {
-	float xd = b->x - a->x;
-	float yd = b->y - a->y;
-	float zd = b->z - a->z;
+	float xd = b->scalars.x - a->scalars.x;
+	float yd = b->scalars.y - a->scalars.y;
+	float zd = b->scalars.z - a->scalars.z;
 
 	return (xd * xd + yd * yd + zd * zd);
 
 }
 
-float vector_magnitude(vector* v)
+float vector_magnitude(vec3_t* v)
 {
-	return sqrtf((v->x * v->x) + (v->y * v->y) + (v->z * v->z));
+	return sqrtf((v->scalars.x * v->scalars.x) + (v->scalars.y * v->scalars.y) + (v->scalars.z * v->scalars.z));
 }
 
-void vector_normalize(vector* v)
+void vector_normalize(vec3_t* v)
 {
 	float magnitude = vector_magnitude(v), z = 0;
 
@@ -116,26 +115,3 @@ void vector_normalize(vector* v)
 		vector_div_scalar(v, z);
 	}
 }
-
-void vector_clamp(vector* v, vector* min, vector* max)
-{
-	if(v->x < min->x) v->x = min->x;
-	if(v->y < min->y) v->y = min->y;
-	if(v->z < min->z) v->z = min->z;
-
-	if(v->x > max->x) v->x = max->x;
-	if(v->y > max->y) v->y = max->y;
-	if(v->z > max->z) v->z = max->z;
-}
-
-void vector_clamp_scalar(vector* v, float min, float max)
-{
-	if(v->x < min) v->x = min;
-	if(v->y < min) v->y = min;
-	if(v->z < min) v->z = min;
-
-	if(v->x > max) v->x = max;
-	if(v->y > max) v->y = max;
-	if(v->z > max) v->z = max;
-}
-

@@ -3,46 +3,53 @@
 
 #include <math.h>
 
-typedef struct
+typedef float vec_t;
+
+typedef union
 {
-        float x, y, z;
+	vec_t xy[2];
+	struct { vec_t x, y; } scalars;
 
-} vector;
+} vec2_t;
 
-vector* vector_create(float x, float y, float z);
+typedef union
+{
+	vec_t xyz[3];
+	struct { vec_t x, y, z; } scalars;
 
-void vector_destroy(vector* v);
+} vec3_t;
 
-void vector_copy(vector* dest, vector* src);
+vec3_t* vec3_create();
 
-void vector_zero(vector* v);
+void vec2_destroy(vec2_t* v);
+void vec3_destroy(vec3_t* v);
+
+void vector_copy(vec3_t* dest, vec3_t* src);
+
+void vector_zero(vec3_t* v);
 
 /* The performance of these vector instructions could be improved on x86 using hand-coded SSE intrinsics,
 though the compiler may do that itself. */
-void vector_add(vector* a, vector* b);
+void vector_add(vec3_t* a, vec3_t* b);
 
-void vector_sub(vector* a, vector* b);
+void vector_sub(vec3_t* a, vec3_t* b);
 
-void vector_sub_scalar(vector* a, float b);
+void vector_sub_scalar(vec3_t* a, float b);
 
-void vector_mul(vector* a, vector* b);
+void vector_mul(vec3_t* a, vec3_t* b);
 
-void vector_mul_scalar(vector* a, float b);
+void vector_mul_scalar(vec3_t* a, float b);
 
-void vector_div(vector* a, vector* b);
+void vector_div(vec3_t* a, vec3_t* b);
 
-void vector_div_scalar(vector* v, float divisor);
+void vector_div_scalar(vec3_t* v, float divisor);
 
-float vector_distance(vector* a, vector* b);
+float vector_distance(vec3_t* a, vec3_t* b);
 
-float vector_distance_nosqrt(vector* a, vector* b);
+float vector_distance_nosqrt(vec3_t* a, vec3_t* b);
 
-float vector_magnitude(vector* v);
+float vector_magnitude(vec3_t* v);
 
-void vector_normalize(vector* v);
-
-void vector_clamp(vector* v, vector* min, vector* max);
-
-void vector_clamp_scalar(vector* v, float min, float max);
+void vector_normalize(vec3_t* v);
 
 #endif
