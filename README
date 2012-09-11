@@ -4,7 +4,7 @@
 
 Tinyflock depends on an external repository called VLIQ which has been added as a submodule.
 
-To clone VLIQ along with Tinyflock, either clone tinyflock with the below command:
+To clone VLIQ along with Tinyflock, either clone Tinyflock with the below command:
 
 	git clone --recursive git://github.com/GenTiradentes/tinyflock.git
 
@@ -21,7 +21,7 @@ Failing to clone VLIQ will result in your compiler throwing a tantrum about not 
 
 The default compiler specified in Tinyflock's Makefile is Clang. I find that with this project, it compiles faster,
 and generates smaller, faster executables. However, your system may not have Clang installed, leading to the build
-failing. Either install clang, or specify "CC=c99" after invoking make.
+failing. To resolve this, install Clang or specify "CC=c99" after invoking make.
 
 To build on most unix platforms, run
 
