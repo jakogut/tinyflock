@@ -201,12 +201,10 @@ int main(int argc, char** argv)
 	flock_update_args update_args = { &run, f, &config, &cursor_pos, &cursor_interaction, &update_count };
 	SDL_Thread* update = SDL_CreateThread(flock_update_thread, (void*)&update_args);
 
-	status_args stat_args = { &run, &frame_count, &update_count };
-	SDL_Thread* status = SDL_CreateThread(status_thread, (void*)&stat_args);
-
 	// If the frame limit is not greater than 0, don't delay between frames at all.
 	float delay = (1000 / config.video.frames_per_second);
 
+	uint32_t start_time = SDL_GetTicks();
 	while(run)
 	{
 		run = handle_events(&event, &cursor_pos, &cursor_interaction);
@@ -217,10 +215,13 @@ int main(int argc, char** argv)
 	}
 
 	SDL_WaitThread(update, NULL);
-	SDL_WaitThread(status, NULL);
+	uint32_t end_time = SDL_GetTicks();
+
+	uint32_t sec_elapsed = (end_time - start_time) / 1000;
+	printf("Average Frames Per Second: %i, Average Ticks Per Second: %i\n", frame_count / sec_elapsed, update_count / sec_elapsed);
 
 	flock_destroy(f);
-	SDL_Quit();
 
+	SDL_Quit();
 	return 0;
 }

@@ -39,52 +39,6 @@ void flock_destroy(flock* f)
 	free(f);
 }
 
-int status_thread(void* arg)
-{
-	status_args* args = (status_args*)arg;
-	uint32_t start_time_fps = SDL_GetTicks(), start_time_ups = SDL_GetTicks();
-	uint32_t start_fcount = *args->frame_count, start_ucount = *args->update_count;
-
-	int sample_size = 10;
-
-	int last_fps = 0, current_fps = 0;
-	int last_ups = 0, current_ups = 0;
-
-	while(*args->run)
-	{
-		if(*args->frame_count >= (start_fcount + sample_size))
-		{
-			int end_time = SDL_GetTicks();
-
-			last_fps = current_fps;
-			current_fps = 1000 / ((end_time - start_time_fps) / sample_size);
-			current_fps = (last_fps * 0.8) + (current_fps * 0.2);
-
-			start_fcount = *args->frame_count;
-			start_time_fps = SDL_GetTicks();
-		}
-
-		if(*args->update_count >= (start_ucount + sample_size))
-		{
-			int end_time = SDL_GetTicks();
-
-			last_ups = current_ups;
-			current_ups = 1000 / ((end_time - start_time_ups) / sample_size);
-			current_ups = (last_ups * 0.8) + (current_ups * 0.2);
-
-			start_ucount = *args->update_count;
-			start_time_ups = SDL_GetTicks();
-		}
-
-		printf("\rFrames per second: %i, Updates per second: %i ", current_fps, current_ups);
-		fflush(stdout);
-	}
-
-	printf("\n");
-
-	return 0;
-}
-
 int flock_update_worker_thread(void* arg)
 {
 	flock_update_worker_args* args = (flock_update_worker_args*)arg;
@@ -151,7 +105,7 @@ int flock_update_thread(void* arg)
 		for(int i = 0; i < args->config->num_threads; i++)
 			SDL_WaitThread(workers[i], NULL);
 
-		*args->update_count += args->config->num_threads;
+		++(*args->update_count);
 	}
 
 	free(flock_sample);
