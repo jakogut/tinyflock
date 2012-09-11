@@ -1,14 +1,35 @@
+------------------------------
+--- CLONING ------------------
+------------------------------
+
+Tinyflock depends on an external repository called VLIQ which has been added as a submodule.
+
+To clone VLIQ along with Tinyflock, either clone tinyflock with the below command:
+
+	git clone --recursive git://github.com/GenTiradentes/tinyflock.git
+
+Or, simply run the following commands after checking out the repository as you normally would:
+
+	git submodule init
+	git submodule update
+
+Failing to clone VLIQ will result in your compiler throwing a tantrum about not being able to find "VLIQ/vliq.h".
+
+------------------------------
+--- BUILDING -----------------
+------------------------------
+
 To build on most unix platforms, run
 
 	make
 
-To build on OS X, run
-
-	make tinyflock-osx
-
 To clean all the intermediate build files, run
 
 	make clean
+
+To clean the project, then rebuild it, run
+
+	make rebuild
 
 To see what arguments the application will accept, run
 
