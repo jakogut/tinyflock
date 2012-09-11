@@ -19,6 +19,10 @@ Failing to clone VLIQ will result in your compiler throwing a tantrum about not 
 --- BUILDING -----------------
 ------------------------------
 
+The default compiler specified in Tinyflock's Makefile is Clang. I find that with this project, it compiles faster,
+and generates smaller, faster executables. However, your system may not have Clang installed, leading to the build
+failing. Either install clang, or specify "CC=c99" after invoking make.
+
 To build on most unix platforms, run
 
 	make
