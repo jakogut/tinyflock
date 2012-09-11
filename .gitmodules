@@ -1,0 +1,3 @@
+[submodule "include/VLIQ"]
+	path = include/VLIQ
+	url = git://github.com/GenTiradentes/VLIQ.git

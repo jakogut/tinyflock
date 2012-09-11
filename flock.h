@@ -4,7 +4,7 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 
-#include "vector.h"
+#include "VLIQ/vliq.h"
 #include "configuration.h"
 
 typedef struct
