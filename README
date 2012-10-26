@@ -19,6 +19,11 @@ Failing to clone VLIQ will result in your compiler throwing a tantrum about not 
 --- BUILDING -----------------
 ------------------------------
 
+Tinyflock depends on GLFW, so make sure you have the required heades and libraries installed before building.
+Using Debian, you can install the required package with the following command.
+
+	apt-get install libglfw-dev
+
 The default compiler specified in Tinyflock's Makefile is Clang. I find that with this project, it compiles faster,
 and generates smaller, faster executables. However, your system may not have Clang installed, leading to the build
 failing. To resolve this, install Clang or specify "CC=c99" after invoking make.
