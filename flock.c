@@ -1,6 +1,10 @@
 #include "flock.h"
 
 #include <math.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <GL/glfw.h>
 
 // Fraction of the flock each boid considers when calculating flocking influence
 #define FRACTIONAL_INFLUENCE 0.50
@@ -39,7 +43,7 @@ void flock_destroy(flock* f)
 	free(f);
 }
 
-int flock_update_worker_thread(void* arg)
+void flock_update_worker_thread(void* arg)
 {
 	flock_update_worker_args* args = (flock_update_worker_args*)arg;
 
@@ -77,15 +81,13 @@ int flock_update_worker_thread(void* arg)
 		args->f->location[i].scalars.y -= args->config->video.screen_height * (args->f->location[i].scalars.y > args->config->video.screen_height);
 		args->f->location[i].scalars.y += args->config->video.screen_height * (args->f->location[i].scalars.y < 0);
 	}
-
-	return 0;
 }
 
-int flock_update_thread(void* arg)
+void flock_update_thread(void* arg)
 {
 	flock_update_args* args = (flock_update_args*)arg;
 
-	SDL_Thread** workers = malloc(sizeof(SDL_Thread*) * args->config->num_threads);
+	GLFWthread* workers = malloc(sizeof(GLFWthread*) * args->config->num_threads);
 	flock_update_worker_args* worker_args = malloc(sizeof(flock_update_worker_args) * args->config->num_threads);
 
 	fractional_flock_size = args->config->flock.size * FRACTIONAL_INFLUENCE;
@@ -100,10 +102,10 @@ int flock_update_thread(void* arg)
 	while(*args->run)
 	{
 		for(int i = 0; i < args->config->num_threads; i++)
-			workers[i] = SDL_CreateThread(flock_update_worker_thread, (void*)&worker_args[i]);
+			workers[i] = glfwCreateThread(flock_update_worker_thread, (void*)&worker_args[i]);
 
 		for(int i = 0; i < args->config->num_threads; i++)
-			SDL_WaitThread(workers[i], NULL);
+			glfwWaitThread(workers[i], GLFW_WAIT);
 
 		++(*args->update_count);
 	}
@@ -112,8 +114,6 @@ int flock_update_thread(void* arg)
 
 	free(worker_args);
 	free(workers);
-
-	return 0;
 }
 
 void flock_influence(vec3_t* v, flock* f, int boid_id, configuration* config)

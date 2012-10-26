@@ -3,7 +3,7 @@ LD = $(CC)
 
 CFLAGS = -Wall -pipe -Iinclude/
 OFLAGS = 
-LFLAGS = -lm -lc -lSDL -lGL
+LFLAGS = -lm -lc -lGL -lglfw
 
 SOURCES = $(wildcard *.c)
 OBJECTS = $(SOURCES:.c=.o)

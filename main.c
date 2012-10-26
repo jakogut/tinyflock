@@ -3,51 +3,13 @@
 #include <string.h>
 #include <time.h>
 
-#include <SDL/SDL.h>
-#include <SDL/SDL_thread.h>
+#include <GL/glfw.h>
 
 #include "flock.h"
 #include "render.h"
 
+#include "input.h"
 #include "configuration.h"
-
-// Returns true if key pressed, false otherwise
-int key_pressed(SDL_Event* event, int key)
-{
-	return (event->type == SDL_KEYDOWN && event->key.keysym.sym == SDLK_ESCAPE);
-}
-
-// Handle input and events. Return 0 to quit the program, or 1 to keep running.
-int handle_events(SDL_Event* event, vec3_t* cursor_pos, int* cursor_interaction)
-{
-	while(SDL_PollEvent(event))
-	{
-		int x, y;
-
-		switch(event->type)
-		{
-			case SDL_KEYDOWN:
-				if(key_pressed(event, SDLK_ESCAPE)) return 0;
-				break;
-			case SDL_MOUSEBUTTONDOWN:
-				if(event->button.button == 1) *cursor_interaction = 1;
-				else if(event->button.button == 3) *cursor_interaction = 2;
-				break;
-			case SDL_MOUSEBUTTONUP:
-				*cursor_interaction = 0;
-				break;
-			case SDL_MOUSEMOTION:
-				SDL_GetMouseState(&x, &y);
-				cursor_pos->scalars.x = x, cursor_pos->scalars.y = y;
-				break;
-			case SDL_QUIT:
-				return 0;
-				break;
-		}
-	}
-
-	return 1;
-}
 
 void init_gl(int width, int height)
 {
@@ -169,59 +131,49 @@ int main(int argc, char** argv)
 
 	srand(time(NULL));
 
-	// Init SDL and create our screen
-	if(SDL_Init(SDL_INIT_VIDEO) < 0) printf("Unable to initialize SDL. %s\n", SDL_GetError());
-	SDL_Event event;
-
-	int flags = SDL_OPENGL;
-
-	// Attempt to set the video mode
-	SDL_Surface* screen = SDL_SetVideoMode(config.video.screen_width, config.video.screen_height,
-					       config.video.screen_depth, flags);
-
-	if(!screen) printf("Unable to set video mode.\n");
-
-	// Set the window caption
-	SDL_WM_SetCaption("tinyflock", NULL);
-
-	// Create our flock
-	flock* f = flock_create(&config);
+	glfwInit();
+	int window = glfwOpenWindow(config.video.screen_width, config.video.screen_height, 0, 0, 0, 0, 0, 0, GLFW_WINDOW);
+	if(!window) printf("Unable to set video mode.\n");
 
 	init_gl(config.video.screen_width, config.video.screen_height);
 
-	vec3_t cursor_pos;
-	vec3_zero(cursor_pos);
+	glfwSetMousePosCallback(callback_mousemov);
+	glfwSetMouseButtonCallback(callback_mousebtn);
+	glfwSetKeyCallback(callback_keyboard);
 
-	int cursor_interaction = 0;
-	int run = 1;
+	vec3_zero(cursor_pos);
+	cursor_interaction = 0;
+
+	// Create our flock
+	flock* f = flock_create(&config);
 
 	int update_count = 0;
 	int frame_count = 0;
 
 	flock_update_args update_args = { &run, f, &config, &cursor_pos, &cursor_interaction, &update_count };
-	SDL_Thread* update = SDL_CreateThread(flock_update_thread, (void*)&update_args);
+	GLFWthread update = glfwCreateThread(flock_update_thread, (void*)&update_args);
 
 	// If the frame limit is not greater than 0, don't delay between frames at all.
-	float delay = (1000 / config.video.frames_per_second);
+	double delay = (1 / config.video.frames_per_second);
 
-	uint32_t start_time = SDL_GetTicks();
+	glfwSetTime(0);
+
+	run = 1;
 	while(run)
 	{
-		run = handle_events(&event, &cursor_pos, &cursor_interaction);
-		flock_render(f, &config, screen);
+		flock_render(f, &config);
 
-		SDL_Delay(delay);
+		glfwSleep(delay);
 		frame_count++;
 	}
 
-	SDL_WaitThread(update, NULL);
-	uint32_t end_time = SDL_GetTicks();
+	glfwWaitThread(update, GLFW_WAIT);
 
-	uint32_t sec_elapsed = (end_time - start_time) / 1000;
+	uint32_t sec_elapsed = glfwGetTime();
 	printf("Average Frames Per Second: %i, Average Ticks Per Second: %i\n", frame_count / sec_elapsed, update_count / sec_elapsed);
 
 	flock_destroy(f);
 
-	SDL_Quit();
+	glfwTerminate();
 	return 0;
 }

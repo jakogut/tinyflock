@@ -1,8 +1,6 @@
 #ifndef CONFIGURATION_H_
 #define CONFIGURATION_H_
 
-#include <SDL/SDL.h>
-
 // Number of worker threads used to update boids
 #define NUM_THREADS 4
 

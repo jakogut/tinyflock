@@ -1,6 +1,8 @@
 #include "render.h"
 
-void flock_render(flock* f, configuration* config, SDL_Surface* screen)
+#include <GL/glfw.h>
+
+void flock_render(flock* f, configuration* config)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
@@ -16,5 +18,5 @@ void flock_render(flock* f, configuration* config, SDL_Surface* screen)
 		glEnd();
 	}
 
-	SDL_GL_SwapBuffers();
+	glfwSwapBuffers();
 }
