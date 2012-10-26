@@ -154,7 +154,7 @@ int main(int argc, char** argv)
 	GLFWthread update = glfwCreateThread(flock_update_thread, (void*)&update_args);
 
 	// If the frame limit is not greater than 0, don't delay between frames at all.
-	double delay = (1 / config.video.frames_per_second);
+	double delay = (1.0f / config.video.frames_per_second);
 
 	glfwSetTime(0);
 
@@ -162,15 +162,15 @@ int main(int argc, char** argv)
 	while(run)
 	{
 		flock_render(f, &config);
+		++frame_count;
 
 		glfwSleep(delay);
-		frame_count++;
 	}
 
 	glfwWaitThread(update, GLFW_WAIT);
 
 	uint32_t sec_elapsed = glfwGetTime();
-	printf("Average Frames Per Second: %i, Average Ticks Per Second: %i\n", frame_count / sec_elapsed, update_count / sec_elapsed);
+	printf("Average Frames Per Second: %i, Average Ticks Per Second: %i\n", (frame_count / sec_elapsed), (update_count / sec_elapsed));
 
 	flock_destroy(f);
 
