@@ -11,6 +11,8 @@
 #include "input.h"
 #include "configuration.h"
 
+#define FRACTIONAL_INFLUENCE 0.5
+
 void init_gl(int width, int height)
 {
 	glViewport(0, 0, width, height);
@@ -150,15 +152,34 @@ int main(int argc, char** argv)
 	int update_count = 0;
 	int frame_count = 0;
 
-	flock_update_args update_args = { &run, f, &config, &cursor_pos, &cursor_interaction, &update_count };
-	GLFWthread update = glfwCreateThread(flock_update_thread, (void*)&update_args);
+	// DISPATCH //
+	extern int fractional_flock_size;
+	extern int* flock_sample;
+
+	GLFWthread* workers = calloc(sizeof(GLFWthread), config.num_threads);
+        flock_update_worker_args* worker_args = calloc(sizeof(flock_update_worker_args), config.num_threads);
+
+        fractional_flock_size = config.flock.size * FRACTIONAL_INFLUENCE;
+        flock_sample = calloc(sizeof(int), fractional_flock_size);
+
+	GLFWmutex ticks_mutex = glfwCreateMutex();
+
+        for(int i = 0; i < fractional_flock_size; i++)
+                flock_sample[i] = rand() % config.flock.size;
+
+        for(int i = 0; i < config.num_threads; i++)
+                worker_args[i] = (flock_update_worker_args){&run, i, &update_count, ticks_mutex, f, &config, &cursor_pos, &cursor_interaction};
+
+        for(int i = 0; i < config.num_threads; i++)
+                workers[i] = glfwCreateThread(flock_update_worker_thread, (void*)&worker_args[i]);
+	//////////////
+
 
 	// If the frame limit is not greater than 0, don't delay between frames at all.
 	double delay = (1.0f / config.video.frames_per_second);
 
 	glfwSetTime(0);
 
-	run = 1;
 	while(run)
 	{
 		flock_render(f, &config);
@@ -167,11 +188,19 @@ int main(int argc, char** argv)
 		glfwSleep(delay);
 	}
 
-	glfwWaitThread(update, GLFW_WAIT);
-
 	uint32_t sec_elapsed = glfwGetTime();
-	printf("Average Frames Per Second: %i, Average Ticks Per Second: %i\n", (frame_count / sec_elapsed), (update_count / sec_elapsed));
 
+	if(sec_elapsed > 0)
+		printf("Average Frames Per Second: %i, Average Ticks Per Second: %i\n", (frame_count / sec_elapsed), ((update_count / config.num_threads) / sec_elapsed));
+
+        for(int i = 0; i < config.num_threads; i++)
+                glfwWaitThread(workers[i], GLFW_WAIT);
+
+	glfwDestroyMutex(ticks_mutex);
+
+        free(flock_sample);
+        free(worker_args);
+        free(workers);
 	flock_destroy(f);
 
 	glfwTerminate();

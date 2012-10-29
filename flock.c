@@ -6,9 +6,6 @@
 
 #include <GL/glfw.h>
 
-// Fraction of the flock each boid considers when calculating flocking influence
-#define FRACTIONAL_INFLUENCE 0.50
-
 int fractional_flock_size;
 int* flock_sample;
 
@@ -52,68 +49,42 @@ void flock_update_worker_thread(void* arg)
 	int begin_work = work_size * args->thread_id;
 	int end_work = begin_work + work_size - 1;
 
-	for(int i = begin_work; i < end_work; i++)
-	{
-		// Calculate boid movement
-		flock_influence(&args->f->acceleration[i], args->f, i, args->config);
-
-		// Handle mouse input
-		switch(*args->cursor_interaction)
-		{
-			case 0: break;
-			case 1: if(vec3_distance(args->f->location[i], *args->cursor_pos) < args->config->input.influence_radius)
-					boid_approach(args->f, i, *args->cursor_pos, (args->config->flock.max_velocity / 8)); break;
-			case 2: if(vec3_distance(args->f->location[i], *args->cursor_pos) < args->config->input.influence_radius)
-					boid_flee(args->f, i, *args->cursor_pos, args->config->flock.max_velocity / 8); break;
-			default: break;
-		};
-
-		vec3_add(args->f->velocity[i], args->f->acceleration[i]);
-		vec3_add(args->f->location[i], args->f->velocity[i]);
-
-		// Reset the acceleration vectors for the flock
-		vec3_zero(args->f->acceleration[i]);
-
-		// Wrap coordinates
-		args->f->location[i].scalars.x -= args->config->video.screen_width * (args->f->location[i].scalars.x > args->config->video.screen_width);
-		args->f->location[i].scalars.x += args->config->video.screen_width * (args->f->location[i].scalars.x < 0);
-
-		args->f->location[i].scalars.y -= args->config->video.screen_height * (args->f->location[i].scalars.y > args->config->video.screen_height);
-		args->f->location[i].scalars.y += args->config->video.screen_height * (args->f->location[i].scalars.y < 0);
-	}
-}
-
-void flock_update_thread(void* arg)
-{
-	flock_update_args* args = (flock_update_args*)arg;
-
-	GLFWthread* workers = malloc(sizeof(GLFWthread*) * args->config->num_threads);
-	flock_update_worker_args* worker_args = malloc(sizeof(flock_update_worker_args) * args->config->num_threads);
-
-	fractional_flock_size = args->config->flock.size * FRACTIONAL_INFLUENCE;
-	flock_sample = calloc(sizeof(int), fractional_flock_size);
-
-	for(int i = 0; i < fractional_flock_size; i++)
-		flock_sample[i] = rand() % args->config->flock.size;
-
-	for(int i = 0; i < args->config->num_threads; i++)
-		worker_args[i] = (flock_update_worker_args){i, args->f, args->config, args->cursor_pos, args->cursor_interaction};
-
 	while(*args->run)
 	{
-		for(int i = 0; i < args->config->num_threads; i++)
-			workers[i] = glfwCreateThread(flock_update_worker_thread, (void*)&worker_args[i]);
+		for(int i = begin_work; i < end_work; i++)
+		{
+			// Calculate boid movement
+			flock_influence(&args->f->acceleration[i], args->f, i, args->config);
 
-		for(int i = 0; i < args->config->num_threads; i++)
-			glfwWaitThread(workers[i], GLFW_WAIT);
+			// Handle mouse input
+			switch(*args->cursor_interaction)
+			{
+				case 0: break;
+				case 1: if(vec3_distance(args->f->location[i], *args->cursor_pos) < args->config->input.influence_radius)
+						boid_approach(args->f, i, *args->cursor_pos, (args->config->flock.max_velocity / 8)); break;
+				case 2: if(vec3_distance(args->f->location[i], *args->cursor_pos) < args->config->input.influence_radius)
+						boid_flee(args->f, i, *args->cursor_pos, args->config->flock.max_velocity / 8); break;
+				default: break;
+			};
 
-		++(*args->update_count);
+			vec3_add(args->f->velocity[i], args->f->acceleration[i]);
+			vec3_add(args->f->location[i], args->f->velocity[i]);
+
+			// Reset the acceleration vectors for the flock
+			vec3_zero(args->f->acceleration[i]);
+
+			// Wrap coordinates
+			args->f->location[i].scalars.x -= args->config->video.screen_width * (args->f->location[i].scalars.x > args->config->video.screen_width);
+			args->f->location[i].scalars.x += args->config->video.screen_width * (args->f->location[i].scalars.x < 0);
+
+			args->f->location[i].scalars.y -= args->config->video.screen_height * (args->f->location[i].scalars.y > args->config->video.screen_height);
+			args->f->location[i].scalars.y += args->config->video.screen_height * (args->f->location[i].scalars.y < 0);
+		}
+
+//		glfwLockMutex(*args->ticks_mutex);
+		++(*args->ticks);
+//		glfwUnlockMutex(*args->ticks_mutex);
 	}
-
-	free(flock_sample);
-
-	free(worker_args);
-	free(workers);
 }
 
 void flock_influence(vec3_t* v, flock* f, int boid_id, configuration* config)

@@ -33,7 +33,8 @@ void callback_mousebtn(int button, int status)
         }
 }
 
-int run;
+// Dirty fucking hack, fix later
+int run = 1;
 void callback_keyboard(int button, int status)
 {
         if(button == GLFW_KEY_ESC) run = 0;
