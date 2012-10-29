@@ -81,9 +81,7 @@ void flock_update_worker_thread(void* arg)
 			args->f->location[i].scalars.y += args->config->video.screen_height * (args->f->location[i].scalars.y < 0);
 		}
 
-//		glfwLockMutex(*args->ticks_mutex);
 		++(*args->ticks);
-//		glfwUnlockMutex(*args->ticks_mutex);
 	}
 }
 

@@ -149,7 +149,7 @@ int main(int argc, char** argv)
 	// Create our flock
 	flock* f = flock_create(&config);
 
-	int update_count = 0;
+	int* ticks = calloc(sizeof(int), config.num_threads);
 	int frame_count = 0;
 
 	// DISPATCH //
@@ -162,13 +162,11 @@ int main(int argc, char** argv)
         fractional_flock_size = config.flock.size * FRACTIONAL_INFLUENCE;
         flock_sample = calloc(sizeof(int), fractional_flock_size);
 
-	GLFWmutex ticks_mutex = glfwCreateMutex();
-
         for(int i = 0; i < fractional_flock_size; i++)
                 flock_sample[i] = rand() % config.flock.size;
 
         for(int i = 0; i < config.num_threads; i++)
-                worker_args[i] = (flock_update_worker_args){&run, i, &update_count, ticks_mutex, f, &config, &cursor_pos, &cursor_interaction};
+                worker_args[i] = (flock_update_worker_args){&run, i, &ticks[i], f, &config, &cursor_pos, &cursor_interaction};
 
         for(int i = 0; i < config.num_threads; i++)
                 workers[i] = glfwCreateThread(flock_update_worker_thread, (void*)&worker_args[i]);
@@ -190,15 +188,17 @@ int main(int argc, char** argv)
 
 	uint32_t sec_elapsed = glfwGetTime();
 
+	int update_count = 0;
+	for(int i = 0; i < config.num_threads; i++) update_count += ticks[i];
+
 	if(sec_elapsed > 0)
 		printf("Average Frames Per Second: %i, Average Ticks Per Second: %i\n", (frame_count / sec_elapsed), ((update_count / config.num_threads) / sec_elapsed));
 
         for(int i = 0; i < config.num_threads; i++)
                 glfwWaitThread(workers[i], GLFW_WAIT);
 
-	glfwDestroyMutex(ticks_mutex);
-
         free(flock_sample);
+	free(ticks);
         free(worker_args);
         free(workers);
 	flock_destroy(f);
