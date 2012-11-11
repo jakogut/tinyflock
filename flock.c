@@ -51,8 +51,6 @@ void flock_update_worker_thread(void* arg)
 	if(args->thread_id == args->config->num_threads - 1) work_size += args->config->flock.size % args->config->num_threads;
 	int end_work = begin_work + work_size - 1;
 
-	printf("Thread ID: %i, Work Size: %i Begin Work: %i, End Work: %i\n", args->thread_id, work_size, begin_work, end_work);
-
 	while(*args->run)
 	{
 		for(int i = begin_work; i < end_work; i++)
