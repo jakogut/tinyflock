@@ -84,25 +84,22 @@ int print_help()
 	return 0;
 }
 
-int main(int argc, char** argv)
+int parse_arguments(int argc, char** argv, configuration* config)
 {
-	// Create a configuration object, and set the values to the defaults
-	configuration config;
+	config->num_threads = NUM_THREADS;
 
-	config.num_threads = NUM_THREADS;
+	config->video.screen_width = SCREEN_WIDTH;
+	config->video.screen_height = SCREEN_HEIGHT;
+	config->video.screen_depth = SCREEN_DEPTH;
+	config->video.frames_per_second = FPS;
 
-	config.video.screen_width = SCREEN_WIDTH;
-	config.video.screen_height = SCREEN_HEIGHT;
-	config.video.screen_depth = SCREEN_DEPTH;
-	config.video.frames_per_second = FPS;
+	config->input.influence_radius = INFLUENCE_RADIUS;
 
-	config.input.influence_radius = INFLUENCE_RADIUS;
-
-	config.flock.size = NUM_BOIDS;
-	config.flock.max_velocity = MAX_BOID_VELOCITY;
-	config.flock.min_separation = MIN_BOID_SEPARATION;
-	config.flock.max_steering_force = MAX_BOID_STEERING_FORCE;
-	config.flock.neighborhood_radius = NEIGHBORHOOD_RADIUS;
+	config->flock.size = NUM_BOIDS;
+	config->flock.max_velocity = MAX_BOID_VELOCITY;
+	config->flock.min_separation = MIN_BOID_SEPARATION;
+	config->flock.max_steering_force = MAX_BOID_STEERING_FORCE;
+	config->flock.neighborhood_radius = NEIGHBORHOOD_RADIUS;
 
 	// Parse arguments
 	for(int i = 1; i < argc; i++)
@@ -110,26 +107,35 @@ int main(int argc, char** argv)
 		if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
 			return print_help();
 		else if(strcmp(argv[i], "--width") == 0)
-			config.video.screen_width = atoi(argv[++i]);
+			config->video.screen_width = atoi(argv[++i]);
 		else if(strcmp(argv[i], "--height") == 0)
-			config.video.screen_height = atoi(argv[++i]);
+			config->video.screen_height = atoi(argv[++i]);
 		else if(strcmp(argv[i], "--depth") == 0)
-			config.video.screen_depth = atoi(argv[++i]);
+			config->video.screen_depth = atoi(argv[++i]);
 		else if(strcmp(argv[i], "--fps") == 0)
-			config.video.frames_per_second = atoi(argv[++i]);
+			config->video.frames_per_second = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-ir") == 0 || strcmp(argv[i], "--influence-radius") == 0)
-			config.input.influence_radius = atoi(argv[++i]);
+			config->input.influence_radius = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-fc") == 0 || strcmp(argv[i], "--flock-count") == 0)
-			config.flock.size = atoi(argv[++i]);
+			config->flock.size = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-fs") == 0 || strcmp(argv[i], "--flock-separation") == 0)
-			config.flock.min_separation = atoi(argv[++i]);
+			config->flock.min_separation = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-fv") == 0 || strcmp(argv[i], "--flock-velocity") == 0)
-			config.flock.max_velocity = atoi(argv[++i]);
+			config->flock.max_velocity = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-fn") == 0 || strcmp(argv[i], "--flock-neighborhood") == 0)
-			config.flock.neighborhood_radius = atoi(argv[++i]);
+			config->flock.neighborhood_radius = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-t") == 0 || strcmp(argv[i], "--num-threads") == 0)
-			config.num_threads = atoi(argv[++i]);
+			config->num_threads = atoi(argv[++i]);
 	}
+
+	return 1;
+}
+
+int main(int argc, char** argv)
+{
+	// Create a configuration object, and set the values to the defaults
+	configuration config;
+	if(!parse_arguments(argc, argv, &config)) return 0;
 
 	srand(time(NULL));
 
@@ -183,6 +189,7 @@ int main(int argc, char** argv)
 		flock_render(f, &config);
 		++frame_count;
 
+		if(!glfwGetWindowParam(GLFW_OPENED)) run = 0;
 		glfwSleep(delay);
 	}
 
