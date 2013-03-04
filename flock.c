@@ -134,7 +134,7 @@ void flock_influence(vec3_t* v, flock* f, int boid_id, configuration* config)
 			vec3_normalize(&heading);
 
 			// The cohesion is much too strong without weighting
-			vec3_mul_scalar(heading, 0.1);
+			vec3_mul_scalar(heading, 0.15);
 
 			vec3_add(influence[0], heading);
 

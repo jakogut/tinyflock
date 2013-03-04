@@ -131,6 +131,16 @@ int parse_arguments(int argc, char** argv, configuration* config)
 	return 1;
 }
 
+int open_window(int screen_width, int screen_height, char* window_title)
+{
+	int window = glfwOpenWindow(screen_width, screen_height, 0, 0, 0, 0, 0, 0, GLFW_WINDOW);
+	if(!window) printf("Unable to set video mode.\n");
+
+	glfwSetWindowTitle(window_title);
+
+	return window;
+}
+
 int main(int argc, char** argv)
 {
 	// Create a configuration object, and set the values to the defaults
@@ -140,9 +150,8 @@ int main(int argc, char** argv)
 	srand(time(NULL));
 
 	glfwInit();
-	int window = glfwOpenWindow(config.video.screen_width, config.video.screen_height, 0, 0, 0, 0, 0, 0, GLFW_WINDOW);
-	if(!window) printf("Unable to set video mode.\n");
 
+	open_window(config.video.screen_width, config.video.screen_height, "tinyflock");
 	init_gl(config.video.screen_width, config.video.screen_height);
 
 	glfwSetMousePosCallback(callback_mousemov);
