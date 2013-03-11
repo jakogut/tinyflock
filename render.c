@@ -13,8 +13,8 @@ void flock_render(flock* f, configuration* config)
 	{
 
 		glBegin(GL_LINES);
-			glVertex3f(f->location[i].scalars.x, f->location[i].scalars.y, 0.0f);
-			glVertex3f((f->location[i].scalars.x - f->velocity[i].scalars.x), (f->location[i].scalars.y - f->velocity[i].scalars.y), 0.0f);
+			glVertex3f(f->location[i][0], f->location[i][1], 0.0f);
+			glVertex3f((f->location[i][0] - f->velocity[i][0]), (f->location[i][1] - f->velocity[i][1]), 0.0f);
 		glEnd();
 	}
 

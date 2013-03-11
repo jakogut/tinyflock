@@ -14,19 +14,17 @@ flock* flock_create(configuration* config)
 {
 	flock* f = calloc(1, sizeof(flock));
 
-	f->location = calloc(config->flock.size, sizeof(vec3_t));
-	f->acceleration = calloc(config->flock.size, sizeof(vec3_t));
-	f->velocity = calloc(config->flock.size, sizeof(vec3_t));
+	f->location = calloc(config->flock.size, sizeof(vec2_t));
+	f->acceleration = calloc(config->flock.size, sizeof(vec2_t));
+	f->velocity = calloc(config->flock.size, sizeof(vec2_t));
 
 	for(int i = 0; i < config->flock.size; i++)
 	{
-		f->location[i].scalars.x = rand_range(0.0f, config->video.screen_width);
-		f->location[i].scalars.y = rand_range(0.0f, config->video.screen_height);
-		f->location[i].scalars.z = 0;
+		f->location[i][0] = rand_range(0.0f, config->video.screen_width);
+		f->location[i][1] = rand_range(0.0f, config->video.screen_height);
 
-		f->velocity[i].scalars.x = rand_range((0.0f - config->flock.max_velocity), config->flock.max_velocity);
-		f->velocity[i].scalars.y = rand_range((0.0f - config->flock.max_velocity), config->flock.max_velocity);
-		f->velocity[i].scalars.z = 0;
+		f->velocity[i][0] = rand_range((0.0f - config->flock.max_velocity), config->flock.max_velocity);
+		f->velocity[i][1] = rand_range((0.0f - config->flock.max_velocity), config->flock.max_velocity);
 	}
 
 	return f;
@@ -62,39 +60,39 @@ void flock_update_worker_thread(void* arg)
 			switch(*args->cursor_interaction)
 			{
 				case 0: break;
-				case 1: if(vec3_distance(args->f->location[i], *args->cursor_pos) < args->config->input.influence_radius)
+				case 1: if(vec2_distance(args->f->location[i], *args->cursor_pos) < args->config->input.influence_radius)
 						boid_approach(args->f, i, *args->cursor_pos, (args->config->flock.max_velocity / 8)); break;
-				case 2: if(vec3_distance(args->f->location[i], *args->cursor_pos) < args->config->input.influence_radius)
+				case 2: if(vec2_distance(args->f->location[i], *args->cursor_pos) < args->config->input.influence_radius)
 						boid_flee(args->f, i, *args->cursor_pos, args->config->flock.max_velocity / 8); break;
 				default: break;
 			};
 
-			vec3_add(args->f->velocity[i], args->f->acceleration[i]);
-			vec3_add(args->f->location[i], args->f->velocity[i]);
+			vec2_add(args->f->velocity[i], args->f->acceleration[i]);
+			vec2_add(args->f->location[i], args->f->velocity[i]);
 
 			// Reset the acceleration vectors for the flock
-			vec3_zero(args->f->acceleration[i]);
+			vec2_zero(args->f->acceleration[i]);
 
 			// Wrap coordinates
-			args->f->location[i].scalars.x -= args->config->video.screen_width * (args->f->location[i].scalars.x > args->config->video.screen_width);
-			args->f->location[i].scalars.x += args->config->video.screen_width * (args->f->location[i].scalars.x < 0);
+			args->f->location[i][0] -= args->config->video.screen_width * (args->f->location[i][0] > args->config->video.screen_width);
+			args->f->location[i][0] += args->config->video.screen_width * (args->f->location[i][0] < 0);
 
-			args->f->location[i].scalars.y -= args->config->video.screen_height * (args->f->location[i].scalars.y > args->config->video.screen_height);
-			args->f->location[i].scalars.y += args->config->video.screen_height * (args->f->location[i].scalars.y < 0);
+			args->f->location[i][1] -= args->config->video.screen_height * (args->f->location[i][1] > args->config->video.screen_height);
+			args->f->location[i][1] += args->config->video.screen_height * (args->f->location[i][1] < 0);
 		}
 
 		++(*args->ticks);
 	}
 }
 
-void flock_influence(vec3_t* v, flock* f, int boid_id, configuration* config)
+void flock_influence(vec2_t* v, flock* f, int boid_id, configuration* config)
 {
      /* influence[0] = alignment & cohesion,
 	influence[2] = separation */
-	vec3_t influence[2];
+	vec2_t influence[2];
 
 	for(int i = 0; i < 2; i++)
-		vec3_zero(influence[i]);
+		vec2_zero(influence[i]);
 
      /* The first population is a total of the boids within the neighborhood of the target boid.
 	The second population is a total of the boids infringing on the target boid's space.*/
@@ -106,37 +104,37 @@ void flock_influence(vec3_t* v, flock* f, int boid_id, configuration* config)
 	for(int idx = 0; idx < fractional_flock_size; idx++)
 	{
 		int i = flock_sample[idx];
-		register float distance = vec3_distance_squared(f->location[i], f->location[boid_id]);
+		register float distance = vec2_distance_squared(f->location[i], f->location[boid_id]);
 
-		vec3_t heading;
+		vec2_t heading;
 		if(distance <= min_boid_separation_squared)
 		{
 			// Separation
-			vec3_copy(heading, f->location[i]);
-			vec3_sub(heading, f->location[boid_id]);
-			vec3_normalize(&heading);
+			vec2_copy(heading, f->location[i]);
+			vec2_sub(heading, f->location[boid_id]);
+			vec2_normalize(&heading);
 
-			vec3_sub(influence[1], heading);
+			vec2_sub(influence[1], heading);
 
 			population[1]++;
 		}
 		else if(distance <= neighborhood_radius_squared)
 		{
 			// Alignment
-			vec3_copy(heading, f->velocity[i]);
-			vec3_normalize(&heading);
+			vec2_copy(heading, f->velocity[i]);
+			vec2_normalize(&heading);
 
-			vec3_add(influence[0], heading);
+			vec2_add(influence[0], heading);
 
 			// Cohesion
-			vec3_copy(heading, f->location[i]);
-			vec3_sub(heading, f->location[boid_id]);
-			vec3_normalize(&heading);
+			vec2_copy(heading, f->location[i]);
+			vec2_sub(heading, f->location[boid_id]);
+			vec2_normalize(&heading);
 
 			// The cohesion is much too strong without weighting
-			vec3_mul_scalar(heading, 0.15);
+			vec2_mul_scalar(heading, 0.15);
 
-			vec3_add(influence[0], heading);
+			vec2_add(influence[0], heading);
 
 			population[0] += 2;
 		}
@@ -144,44 +142,44 @@ void flock_influence(vec3_t* v, flock* f, int boid_id, configuration* config)
 
 	for(int i = 0; i < 2; i++)
 	{
-		if(vec3_magnitude(influence[i]) > 0)
+		if(vec2_magnitude(influence[i]) > 0)
 		{
-			vec3_div_scalar(influence[i], population[i]);
+			vec2_div_scalar(influence[i], population[i]);
 
-			vec3_normalize(&influence[i]);
-			vec3_mul_scalar(influence[i], config->flock.max_velocity);
-			vec3_sub(influence[i], f->velocity[boid_id]);
-			vec3_mul_scalar(influence[i], config->flock.max_steering_force);
+			vec2_normalize(&influence[i]);
+			vec2_mul_scalar(influence[i], config->flock.max_velocity);
+			vec2_sub(influence[i], f->velocity[boid_id]);
+			vec2_mul_scalar(influence[i], config->flock.max_steering_force);
 
-			for(int j = 0; j < 3; j++) v->xyz[j] += influence[i].xyz[j];
+			for(int j = 0; j < 2; j++) (*v)[j] += influence[i][j];
 		}
 	}
 }
 
-void boid_approach(flock* f, int boid_id, vec3_t v, float weight)
+void boid_approach(flock* f, int boid_id, vec2_t v, float weight)
 {
-	vec3_t heading;
-	vec3_copy(heading, v);
-	vec3_sub(heading, f->location[boid_id]);
+	vec2_t heading;
+	vec2_copy(heading, v);
+	vec2_sub(heading, f->location[boid_id]);
 
-	vec3_normalize(&heading);
+	vec2_normalize(&heading);
 
-	vec3_mul_scalar(heading, weight);
+	vec2_mul_scalar(heading, weight);
 
-	vec3_add(f->acceleration[boid_id], heading);
+	vec2_add(f->acceleration[boid_id], heading);
 }
 
-void boid_flee(flock* f, int boid_id, vec3_t v, float weight)
+void boid_flee(flock* f, int boid_id, vec2_t v, float weight)
 {
-	vec3_t heading;
-	vec3_copy(heading, v);
-	vec3_sub(heading, f->location[boid_id]);
+	vec2_t heading;
+	vec2_copy(heading, v);
+	vec2_sub(heading, f->location[boid_id]);
 
-	vec3_normalize(&heading);
+	vec2_normalize(&heading);
 
-	vec3_mul_scalar(heading, weight);
+	vec2_mul_scalar(heading, weight);
 
-	vec3_sub(f->acceleration[boid_id], heading);
+	vec2_sub(f->acceleration[boid_id], heading);
 }
 
 float rand_range(float min, float max)

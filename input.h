@@ -1,11 +1,11 @@
 #ifndef INPUT_H_
 #define INPUT_H_
 
-vec3_t cursor_pos;
+vec2_t cursor_pos;
 void callback_mousemov(int x, int y)
 {
-        cursor_pos.scalars.x = x;
-        cursor_pos.scalars.y = y;
+        cursor_pos[0] = x;
+        cursor_pos[1] = y;
 }
 
 int cursor_interaction;

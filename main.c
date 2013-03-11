@@ -158,7 +158,7 @@ int main(int argc, char** argv)
 	glfwSetMouseButtonCallback(callback_mousebtn);
 	glfwSetKeyCallback(callback_keyboard);
 
-	vec3_zero(cursor_pos);
+	vec2_zero(cursor_pos);
 	cursor_interaction = 0;
 
 	// Create our flock
