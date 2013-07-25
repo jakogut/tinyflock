@@ -2,14 +2,17 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <pthread.h>
 
-#include <GL/glfw.h>
+#include <GLFW/glfw3.h>
 
 #include "flock.h"
 #include "render.h"
 
-#include "input.h"
+#include "events.h"
 #include "configuration.h"
+
+#define WINDOW_TITLE "tinyflock"
 
 #define FRACTIONAL_INFLUENCE 0.5
 
@@ -131,16 +134,6 @@ int parse_arguments(int argc, char** argv, configuration* config)
 	return 1;
 }
 
-int open_window(int screen_width, int screen_height, char* window_title)
-{
-	int window = glfwOpenWindow(screen_width, screen_height, 0, 0, 0, 0, 0, 0, GLFW_WINDOW);
-	if(!window) printf("Unable to set video mode.\n");
-
-	glfwSetWindowTitle(window_title);
-
-	return window;
-}
-
 int main(int argc, char** argv)
 {
 	// Create a configuration object, and set the values to the defaults
@@ -151,15 +144,23 @@ int main(int argc, char** argv)
 
 	glfwInit();
 
-	open_window(config.video.screen_width, config.video.screen_height, "tinyflock");
-	init_gl(config.video.screen_width, config.video.screen_height);
+	GLFWwindow* window = glfwCreateWindow(config.video.screen_width, config.video.screen_height, WINDOW_TITLE, NULL, NULL);
+	if(!window) printf("Unable to set video mode.\n");
 
-	glfwSetMousePosCallback(callback_mousemov);
-	glfwSetMouseButtonCallback(callback_mousebtn);
-	glfwSetKeyCallback(callback_keyboard);
+	// Register callbacks
+	glfwSetCursorPosCallback(window, callback_cursormov);
+	glfwSetMouseButtonCallback(window, callback_mousebtn);
+	glfwSetKeyCallback(window, callback_keyboard);
+	glfwSetWindowCloseCallback(window, callback_wclose);
 
 	vec2_zero(cursor_pos);
 	cursor_interaction = 0;
+
+	glfwMakeContextCurrent(window);
+
+	init_gl(config.video.screen_width, config.video.screen_height);
+	printf("Using OpenGL Version: %i.%i\n", glfwGetWindowAttrib(window, GLFW_CONTEXT_VERSION_MAJOR),
+						glfwGetWindowAttrib(window, GLFW_CONTEXT_VERSION_MINOR));
 
 	// Create our flock
 	flock* f = flock_create(&config);
@@ -167,12 +168,9 @@ int main(int argc, char** argv)
 	int* ticks = calloc(sizeof(int), config.num_threads);
 	int frame_count = 0;
 
-	// DISPATCH //
+// DISPATCH //
 	extern int fractional_flock_size;
 	extern int* flock_sample;
-
-	GLFWthread* workers = calloc(sizeof(GLFWthread), config.num_threads);
-        flock_update_worker_args* worker_args = calloc(sizeof(flock_update_worker_args), config.num_threads);
 
         fractional_flock_size = config.flock.size * FRACTIONAL_INFLUENCE;
         flock_sample = calloc(sizeof(int), fractional_flock_size);
@@ -180,26 +178,24 @@ int main(int argc, char** argv)
         for(int i = 0; i < fractional_flock_size; i++)
                 flock_sample[i] = rand() % config.flock.size;
 
+	pthread_t* workers = calloc(sizeof(pthread_t), config.num_threads);
+        flock_update_worker_args* worker_args = calloc(sizeof(flock_update_worker_args), config.num_threads);
+
         for(int i = 0; i < config.num_threads; i++)
                 worker_args[i] = (flock_update_worker_args){&run, i, &ticks[i], f, &config, &cursor_pos, &cursor_interaction};
 
         for(int i = 0; i < config.num_threads; i++)
-                workers[i] = glfwCreateThread(flock_update_worker_thread, (void*)&worker_args[i]);
-	//////////////
-
-
-	// If the frame limit is not greater than 0, don't delay between frames at all.
-	double delay = (1.0f / config.video.frames_per_second);
+		pthread_create(&workers[i], NULL, flock_update_worker_thread, (void*)&worker_args[i]);
+//////////////
 
 	glfwSetTime(0);
 
-	while(run)
+	while(run && !glfwWindowShouldClose(window))
 	{
-		flock_render(f, &config);
+		flock_render(window, f, &config);
 		++frame_count;
 
-		if(!glfwGetWindowParam(GLFW_OPENED)) run = 0;
-		glfwSleep(delay);
+		glfwPollEvents();
 	}
 
 	uint32_t sec_elapsed = glfwGetTime();
@@ -211,7 +207,9 @@ int main(int argc, char** argv)
 		printf("Average Frames Per Second: %i, Average Ticks Per Second: %i\n", (frame_count / sec_elapsed), ((update_count / config.num_threads) / sec_elapsed));
 
         for(int i = 0; i < config.num_threads; i++)
-                glfwWaitThread(workers[i], GLFW_WAIT);
+                pthread_join(workers[i], NULL);
+
+	glfwDestroyWindow(window);
 
         free(flock_sample);
 	free(ticks);

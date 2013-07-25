@@ -1,8 +1,10 @@
 #include "render.h"
 
-#include <GL/glfw.h>
+#include <GLFW/glfw3.h>
 
-void flock_render(flock* f, configuration* config)
+#include <stdio.h>
+
+void flock_render(GLFWwindow* window, flock* f, configuration* config)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
@@ -18,5 +20,5 @@ void flock_render(flock* f, configuration* config)
 		glEnd();
 	}
 
-	glfwSwapBuffers();
+	glfwSwapBuffers(window);
 }

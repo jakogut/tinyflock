@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <GL/glfw.h>
+#include <GLFW/glfw3.h>
 
 int fractional_flock_size;
 int* flock_sample;
@@ -39,7 +39,7 @@ void flock_destroy(flock* f)
 	free(f);
 }
 
-void flock_update_worker_thread(void* arg)
+void* flock_update_worker_thread(void* arg)
 {
 	flock_update_worker_args* args = (flock_update_worker_args*)arg;
 
@@ -83,6 +83,8 @@ void flock_update_worker_thread(void* arg)
 
 		++(*args->ticks);
 	}
+
+	return NULL;
 }
 
 void flock_influence(vec2_t* v, flock* f, int boid_id, configuration* config)
