@@ -1,7 +1,7 @@
 CC = clang
 LD = $(CC)
 
-CFLAGS = -Wall -pipe -Iinclude/
+CFLAGS = -Wall -pipe -Iinclude/ -std=gnu11 -march=native
 OFLAGS = 
 LFLAGS = -lm -lc -lGL -lglfw -lpthread
 
@@ -10,10 +10,12 @@ OBJECTS = $(SOURCES:.c=.o)
 
 DEBUG = no
 PROFILE = no
+
 OPTIMIZATION = -O3
 
 ifeq ($(DEBUG), yes)
 	CFLAGS += -g -DDEBUG
+	OPTIMIZATION = -O2
 endif
 
 ifeq ($(PROFILE), yes)

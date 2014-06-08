@@ -61,9 +61,9 @@ void* flock_update_worker_thread(void* arg)
 			{
 				case 0: break;
 				case 1: if(vec2_distance(args->f->location[i], *args->cursor_pos) < args->config->input.influence_radius)
-						boid_approach(args->f, i, *args->cursor_pos, (args->config->flock.max_velocity / 8)); break;
+						boid_approach(args->f, i, *args->cursor_pos, 1); break;
 				case 2: if(vec2_distance(args->f->location[i], *args->cursor_pos) < args->config->input.influence_radius)
-						boid_flee(args->f, i, *args->cursor_pos, args->config->flock.max_velocity / 8); break;
+						boid_flee(args->f, i, *args->cursor_pos, 1); break;
 				default: break;
 			};
 
