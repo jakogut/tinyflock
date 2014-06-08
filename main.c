@@ -16,6 +16,8 @@
 
 #define FRACTIONAL_INFLUENCE 0.5
 
+#define FPS_BUFFER_SIZE 5
+
 void init_gl(int width, int height)
 {
 	glViewport(0, 0, width, height);
@@ -134,6 +136,23 @@ int parse_arguments(int argc, char** argv, configuration* config)
 	return 1;
 }
 
+/* Here we take the time taken to render the newest frame and average it with the last N frames to get our FPS */
+void print_frametime(long frame_time_nsec)
+{
+	long frames_per_second = 1000000000 / frame_time_nsec;
+
+	static long fps_buffer[FPS_BUFFER_SIZE];
+	for(int i = FPS_BUFFER_SIZE - 1; i != 0; i--) fps_buffer[i] = fps_buffer[i - 1];
+	fps_buffer[0] = frames_per_second;
+
+	long fps_avg = 0;
+	for(int i = 0; i < FPS_BUFFER_SIZE; i++) fps_avg += fps_buffer[i];
+	fps_avg /= FPS_BUFFER_SIZE;
+
+	printf("\rFPS: %ld\t", fps_avg);
+	fflush(stdout);
+}
+
 int main(int argc, char** argv)
 {
 	// Create a configuration object, and set the values to the defaults
@@ -148,9 +167,11 @@ int main(int argc, char** argv)
 	if(!window) printf("Unable to set video mode.\n");
 
 	// Register callbacks
+	callback_config_ptr = &config;
 	glfwSetCursorPosCallback(window, callback_cursormov);
 	glfwSetMouseButtonCallback(window, callback_mousebtn);
 	glfwSetKeyCallback(window, callback_keyboard);
+	glfwSetWindowSizeCallback(window, callback_windowresize);
 	glfwSetWindowCloseCallback(window, callback_wclose);
 
 	vec2_zero(cursor_pos);
@@ -166,7 +187,6 @@ int main(int argc, char** argv)
 	flock* f = flock_create(&config);
 
 	int* ticks = calloc(sizeof(int), config.num_threads);
-	int frame_count = 0;
 
 // DISPATCH //
 	extern int fractional_flock_size;
@@ -188,23 +208,26 @@ int main(int argc, char** argv)
 		pthread_create(&workers[i], NULL, flock_update_worker_thread, (void*)&worker_args[i]);
 //////////////
 
-	glfwSetTime(0);
+	struct timespec curr_time, new_time;
+	long frame_time_nsec;
+
+        clock_gettime(CLOCK_MONOTONIC, &curr_time);
 
 	while(run && !glfwWindowShouldClose(window))
 	{
 		flock_render(window, f, &config);
-		++frame_count;
+		clock_gettime(CLOCK_MONOTONIC, &new_time);
+
+		frame_time_nsec = (new_time.tv_nsec - curr_time.tv_nsec) + (1000000000 * (new_time.tv_sec - curr_time.tv_sec));
+		curr_time = new_time;
+
+		print_frametime(frame_time_nsec);
 
 		glfwPollEvents();
 	}
 
-	uint32_t sec_elapsed = glfwGetTime();
-
 	int update_count = 0;
 	for(int i = 0; i < config.num_threads; i++) update_count += ticks[i];
-
-	if(sec_elapsed > 0)
-		printf("Average Frames Per Second: %i, Average Ticks Per Second: %i\n", (frame_count / sec_elapsed), ((update_count / config.num_threads) / sec_elapsed));
 
         for(int i = 0; i < config.num_threads; i++)
                 pthread_join(workers[i], NULL);
