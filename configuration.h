@@ -16,7 +16,7 @@
 #define INFLUENCE_RADIUS 150
 
 // Default boid parameters
-#define NUM_BOIDS 4096
+#define NUM_BOIDS 6136
 
 #define MAX_BOID_VELOCITY 8
 #define MIN_BOID_SEPARATION 5

@@ -136,8 +136,8 @@ int parse_arguments(int argc, char** argv, configuration* config)
 	return 1;
 }
 
-/* Here we take the time taken to render the newest frame and average it with the last N frames to get our FPS */
-void print_frametime(long frame_time_nsec)
+/* Here we take the time taken to render the newest frame and average it with the last N frames */
+long avg_fps(long frame_time_nsec)
 {
 	long frames_per_second = 1000000000 / frame_time_nsec;
 
@@ -147,9 +147,12 @@ void print_frametime(long frame_time_nsec)
 
 	long fps_avg = 0;
 	for(int i = 0; i < FPS_BUFFER_SIZE; i++) fps_avg += fps_buffer[i];
-	fps_avg /= FPS_BUFFER_SIZE;
+	return fps_avg / FPS_BUFFER_SIZE;
+}
 
-	printf("\rFPS: %ld   ", fps_avg);
+void print_time_stats(long fps, long tps)
+{
+	printf("\rFrames Per Second: %ld, Ticks Per Second: %ld        ", fps, tps);
 	fflush(stdout);
 }
 
@@ -188,7 +191,7 @@ int main(int argc, char** argv)
 	// Create our flock
 	flock* f = flock_create(&config);
 
-	int* ticks = calloc(sizeof(int), config.num_threads);
+	long* tps = calloc(sizeof(long), config.num_threads);
 
 // DISPATCH //
 	extern int fractional_flock_size;
@@ -204,7 +207,7 @@ int main(int argc, char** argv)
         flock_update_worker_args* worker_args = calloc(sizeof(flock_update_worker_args), config.num_threads);
 
         for(int i = 0; i < config.num_threads; i++)
-                worker_args[i] = (flock_update_worker_args){&run, i, &ticks[i], f, &config, &cursor_pos, &cursor_interaction};
+                worker_args[i] = (flock_update_worker_args){&run, i, tps, f, &config, &cursor_pos, &cursor_interaction};
 
         for(int i = 0; i < config.num_threads; i++)
 		pthread_create(&workers[i], NULL, flock_update_worker_thread, (void*)&worker_args[i]);
@@ -223,13 +226,13 @@ int main(int argc, char** argv)
 		frame_time_nsec = (new_time.tv_nsec - curr_time.tv_nsec) + (1000000000 * (new_time.tv_sec - curr_time.tv_sec));
 		curr_time = new_time;
 
-		print_frametime(frame_time_nsec);
+		long avg_tps = 0; for(int i = 0; i < config.num_threads; i++) avg_tps += tps[i];
+		avg_tps /= config.num_threads;
+
+		print_time_stats(avg_fps(frame_time_nsec), avg_tps);
 
 		glfwPollEvents();
 	}
-
-	int update_count = 0;
-	for(int i = 0; i < config.num_threads; i++) update_count += ticks[i];
 
         for(int i = 0; i < config.num_threads; i++)
                 pthread_join(workers[i], NULL);
@@ -237,7 +240,7 @@ int main(int argc, char** argv)
 	glfwDestroyWindow(window);
 
         free(flock_sample);
-	free(ticks);
+	free(tps);
         free(worker_args);
         free(workers);
 	flock_destroy(f);
