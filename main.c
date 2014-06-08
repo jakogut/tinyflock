@@ -149,7 +149,7 @@ void print_frametime(long frame_time_nsec)
 	for(int i = 0; i < FPS_BUFFER_SIZE; i++) fps_avg += fps_buffer[i];
 	fps_avg /= FPS_BUFFER_SIZE;
 
-	printf("\rFPS: %ld\t", fps_avg);
+	printf("\rFPS: %ld   ", fps_avg);
 	fflush(stdout);
 }
 
@@ -165,6 +165,8 @@ int main(int argc, char** argv)
 
 	GLFWwindow* window = glfwCreateWindow(config.video.screen_width, config.video.screen_height, WINDOW_TITLE, NULL, NULL);
 	if(!window) printf("Unable to set video mode.\n");
+
+	glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 
 	// Register callbacks
 	callback_config_ptr = &config;

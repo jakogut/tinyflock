@@ -40,6 +40,15 @@ void callback_keyboard(GLFWwindow* window, int key, int scancode, int action, in
         if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) run = 0;
 }
 
+configuration* callback_config_ptr = NULL;
+extern void init_gl(int width, int height);
+void callback_windowresize(GLFWwindow* window, int width, int height)
+{
+	callback_config_ptr->video.screen_width  = width;
+	callback_config_ptr->video.screen_height = height;
+	init_gl(width, height);
+}
+
 void callback_wclose(GLFWwindow* window)
 {
 	run = 0;
