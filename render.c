@@ -13,10 +13,14 @@ void flock_render(GLFWwindow* window, flock* f, configuration* config)
 
 	for(int i = 0; i < config->flock.size; i++)
 	{
+		vec2_t normalized_velocity = {f->velocity[i][0], f->velocity[i][1]};
+
+		vec2_normalize(&normalized_velocity);
+		vec2_mul_scalar(normalized_velocity, 15);
 
 		glBegin(GL_LINES);
-			glVertex3f(f->location[i][0], f->location[i][1], 0.0f);
-			glVertex3f((f->location[i][0] - f->velocity[i][0]), (f->location[i][1] - f->velocity[i][1]), 0.0f);
+			glVertex2f(f->location[i][0], f->location[i][1]);
+			glVertex2f((f->location[i][0] - normalized_velocity[0]), (f->location[i][1] - normalized_velocity[1]));
 		glEnd();
 	}
 
