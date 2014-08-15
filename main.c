@@ -98,8 +98,6 @@ int parse_arguments(int argc, char** argv, configuration* config)
 	config->video.screen_depth = SCREEN_DEPTH;
 	config->video.frames_per_second = FPS;
 
-	config->input.influence_radius = INFLUENCE_RADIUS;
-
 	config->flock.size = NUM_BOIDS;
 	config->flock.max_velocity = MAX_BOID_VELOCITY;
 	config->flock.min_separation = MIN_BOID_SEPARATION;
@@ -132,6 +130,9 @@ int parse_arguments(int argc, char** argv, configuration* config)
 		else if(strcmp(argv[i], "-t") == 0 || strcmp(argv[i], "--num-threads") == 0)
 			config->num_threads = atoi(argv[++i]);
 	}
+
+	// We want the influence radius to scale with the screen real estate
+	config->input.influence_radius = sqrt(config->video.screen_height * config->video.screen_width) / 5;
 
 	return 1;
 }
