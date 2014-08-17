@@ -16,11 +16,11 @@
 #define INFLUENCE_RADIUS 150
 
 // Default boid parameters
-#define NUM_BOIDS 6136
+#define NUM_BOIDS 6144
 
-#define MAX_BOID_VELOCITY 8
+#define MAX_BOID_VELOCITY 5
 #define MIN_BOID_SEPARATION 5
-#define MAX_BOID_STEERING_FORCE 0.6
+#define MAX_BOID_STEERING_FORCE 0.3
 #define NEIGHBORHOOD_RADIUS 30
 
 typedef struct

@@ -90,10 +90,6 @@ void* flock_update_worker_thread(void* arg)
 				default: break;
 			};
 
-
-//			vec2_mul_scalar(args->f->velocity[i], (40 / tps_avg));
-
-
 			vec2_add(args->f->velocity[i], args->f->acceleration[i]);
 			vec2_add(args->f->location[i], args->f->velocity[i]);
 
