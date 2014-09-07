@@ -10,9 +10,6 @@
 
 #define TPS_BUFFER_SIZE 5
 
-int fractional_flock_size;
-int* flock_sample;
-
 flock* flock_create(configuration* config)
 {
 	flock* f = calloc(1, sizeof(flock));
@@ -127,16 +124,15 @@ void flock_influence(vec2_t* v, flock* f, int boid_id, float max_velocity, confi
 	register float neighborhood_radius_squared = powf(config->flock.neighborhood_radius, 2);
 	register float min_boid_separation_squared = powf(config->flock.min_separation, 2);
 
-	for(int idx = 0; idx < fractional_flock_size; idx++)
+	for(int idx = 0; idx < config->flock.size; idx++)
 	{
-		int i = flock_sample[idx];
-		register float distance = vec2_distance_squared(f->location[i], f->location[boid_id]);
+		register float distance = vec2_distance_squared(f->location[idx], f->location[boid_id]);
 
 		vec2_t heading;
 		if(distance <= min_boid_separation_squared)
 		{
 			// Separation
-			vec2_copy(heading, f->location[i]);
+			vec2_copy(heading, f->location[idx]);
 			vec2_sub(heading, f->location[boid_id]);
 			vec2_normalize(&heading);
 
@@ -147,13 +143,13 @@ void flock_influence(vec2_t* v, flock* f, int boid_id, float max_velocity, confi
 		else if(distance <= neighborhood_radius_squared)
 		{
 			// Alignment
-			vec2_copy(heading, f->velocity[i]);
+			vec2_copy(heading, f->velocity[idx]);
 			vec2_normalize(&heading);
 
 			vec2_add(influence[0], heading);
 
 			// Cohesion
-			vec2_copy(heading, f->location[i]);
+			vec2_copy(heading, f->location[idx]);
 			vec2_sub(heading, f->location[boid_id]);
 			vec2_normalize(&heading);
 

@@ -14,8 +14,6 @@
 
 #define WINDOW_TITLE "tinyflock"
 
-#define FRACTIONAL_INFLUENCE 0.5
-
 #define FPS_BUFFER_SIZE 5
 
 void init_gl(int width, int height)
@@ -196,15 +194,6 @@ int main(int argc, char** argv)
 	long* tps = calloc(sizeof(long), config.num_threads);
 
 // DISPATCH //
-	extern int fractional_flock_size;
-	extern int* flock_sample;
-
-        fractional_flock_size = config.flock.size * FRACTIONAL_INFLUENCE;
-        flock_sample = calloc(sizeof(int), fractional_flock_size);
-
-        for(int i = 0; i < fractional_flock_size; i++)
-                flock_sample[i] = rand() % config.flock.size;
-
 	pthread_t* workers = calloc(sizeof(pthread_t), config.num_threads);
         flock_update_worker_args* worker_args = calloc(sizeof(flock_update_worker_args), config.num_threads);
 
@@ -241,7 +230,6 @@ int main(int argc, char** argv)
 
 	glfwDestroyWindow(window);
 
-        free(flock_sample);
 	free(tps);
         free(worker_args);
         free(workers);
