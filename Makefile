@@ -26,8 +26,11 @@ CFLAGS += $(OPTIMIZATION)
 
 all: tinyflock
 
-tinyflock: $(OBJECTS)
+tinyflock: modules $(OBJECTS)
 	$(LD) $(LFLAGS) $(OBJECTS) -o tinyflock
+
+modules:
+	git submodule update --init
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -37,5 +40,5 @@ clean:
 
 rebuild: clean all
 
-.PHONY : clean
-.SILENT : clean
+.PHONY : clean modules
+.SILENT : clean modules

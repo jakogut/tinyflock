@@ -4,22 +4,13 @@
 
 Tinyflock depends on an external repository called VLIQ which has been added as a submodule.
 
-To clone VLIQ along with Tinyflock, either clone Tinyflock with the below command:
-
-	git clone --recursive git://github.com/GenTiradentes/tinyflock.git
-
-Or, simply run the following commands after checking out the repository as you normally would:
-
-	git submodule init
-	git submodule update
-
-Failing to clone VLIQ will result in your compiler throwing a tantrum about not being able to find "VLIQ/vliq.h".
+The makefile will pull in this submodule automatically if it does not exist.
 
 ------------------------------
 --- BUILDING -----------------
 ------------------------------
 
-Tinyflock depends on GLFW, so make sure you have the required heades and libraries installed before building.
+Tinyflock depends on GLFW 3, so make sure you have the required headers and libraries installed before building.
 Using Debian, you can install the required package with the following command.
 
 	apt-get install libglfw-dev

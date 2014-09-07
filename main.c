@@ -29,7 +29,7 @@ void init_gl(int width, int height)
 	glEnable(GL_BLEND);
 	glEnable(GL_LINE_SMOOTH);
 
-	glLineWidth(0.2f);
+	glLineWidth(1.0f);
 
 	glShadeModel(GL_SMOOTH);
 
@@ -167,10 +167,11 @@ int main(int argc, char** argv)
 
 	glfwInit();
 
+	glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
+	glfwWindowHint(GLFW_SAMPLES, 4);
+
 	GLFWwindow* window = glfwCreateWindow(config.video.screen_width, config.video.screen_height, WINDOW_TITLE, NULL, NULL);
 	if(!window) printf("Unable to set video mode.\n");
-
-	glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 
 	// Register callbacks
 	callback_config_ptr = &config;
