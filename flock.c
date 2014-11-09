@@ -99,7 +99,7 @@ void* flock_update_worker_thread(void* arg)
 
 		// -- Write location -- //
 		for(int i = 0; i < args->config->flock.size; i++)
-			fprintf(args->f->log, "%f %f ", ((args->f->location[i][0] - (0.5 * width)) / width), ((args->f->location[i][1] - (0.5 * height)) / height));
+			fprintf(args->f->log, "%f %f ", ((0.5 * width) - args->f->location[i][0]) / width, ((0.5 * height) - args->f->location[i][1]) / height);
 		fprintf(args->f->log, "\n");
 
 		for(int i = begin_work; i < end_work; i++)
