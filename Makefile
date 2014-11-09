@@ -24,10 +24,13 @@ endif
 
 CFLAGS += $(OPTIMIZATION)
 
-all: tinyflock
+all: tinyflock nn
 
 tinyflock: modules $(OBJECTS)
 	$(LD) $(LFLAGS) $(OBJECTS) -o tinyflock
+
+nn: tinyflock
+	$(CC) $(LFLAGS) nn/flock_nn.c -o nn/flock_nn
 
 modules:
 	git submodule update --init

@@ -180,14 +180,9 @@ int main(int argc, char** argv)
 	if(!window) printf("Unable to set video mode.\n");
 
 	// Register callbacks
-	glfwSetCursorPosCallback(window, callback_cursormov);
-	glfwSetMouseButtonCallback(window, callback_mousebtn);
 	glfwSetKeyCallback(window, callback_keyboard);
 	glfwSetWindowSizeCallback(window, callback_windowresize);
 	glfwSetWindowCloseCallback(window, callback_wclose);
-
-	vec2_zero(cursor_pos);
-	cursor_interaction = 0;
 
 	glfwMakeContextCurrent(window);
 

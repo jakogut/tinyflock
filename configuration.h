@@ -17,7 +17,7 @@
 #define INFLUENCE_WEIGHT 80
 
 // Default boid parameters
-#define NUM_BOIDS 1024
+#define NUM_BOIDS 512
 
 #define MAX_BOID_VELOCITY 5
 #define MIN_BOID_SEPARATION 8
