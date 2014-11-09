@@ -3,7 +3,7 @@ LD = $(CC)
 
 CFLAGS = -Wall -pipe -Iinclude/ -std=gnu11 -march=native
 OFLAGS = 
-LFLAGS = -lm -lc -lGL -lglfw -lpthread
+LFLAGS = -lfann -lm -lc -lGL -lglfw -lpthread
 
 SOURCES = $(wildcard *.c)
 OBJECTS = $(SOURCES:.c=.o)
