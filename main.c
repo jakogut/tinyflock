@@ -16,6 +16,7 @@
 
 #define FPS_BUFFER_SIZE 5
 
+#define INTERVAL_ACTION
 
 void init_gl(int width, int height)
 {
@@ -216,6 +217,8 @@ int main(int argc, char** argv)
 
         clock_gettime(CLOCK_MONOTONIC, &curr_time);
 
+	int timer = time(NULL), ntimer = 0;
+
 	while(run && !glfwWindowShouldClose(window))
 	{
 		flock_render(window, flock_ptr, config);
@@ -228,6 +231,14 @@ int main(int argc, char** argv)
 		avg_tps /= config->num_threads;
 
 		print_time_stats(avg_fps(frame_time_nsec), avg_tps);
+
+		// Randomize flock acceleration every N seconds
+		ntimer = time(NULL);
+		if(ntimer - timer >= 2)
+		{
+			flock_randomize_acceleration(flock_ptr, config);
+			timer = ntimer;
+		}
 
 		glfwPollEvents();
 	}

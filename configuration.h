@@ -2,11 +2,11 @@
 #define CONFIGURATION_H_
 
 // Number of worker threads used to update boids
-#define NUM_THREADS 4
+#define NUM_THREADS 1
 
 // Default video configuration
-#define SCREEN_WIDTH    1280
-#define SCREEN_HEIGHT   720
+#define SCREEN_WIDTH    640
+#define SCREEN_HEIGHT   480
 #define SCREEN_DEPTH    32
 
 // Limiting the frame rate to 50 helps free the processor for updates
@@ -17,7 +17,7 @@
 #define INFLUENCE_WEIGHT 80
 
 // Default boid parameters
-#define NUM_BOIDS 6144
+#define NUM_BOIDS 100
 
 #define MAX_BOID_VELOCITY 5
 #define MIN_BOID_SEPARATION 8
