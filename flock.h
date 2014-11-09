@@ -18,7 +18,7 @@ typedef struct
 flock* flock_create(configuration* config);
 void flock_destroy(flock* f);
 
-void flock_randomize(flock* f, int start, int end);
+void flock_randomize_acceleration(flock* f, configuration* config);
 
 typedef struct { int* run; int thread_id; long* ticks; flock* f; configuration* config; vec2_t* cursor_pos; int* cursor_interaction; } flock_update_worker_args;
 void* flock_update_worker_thread(void* arg);

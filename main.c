@@ -16,6 +16,7 @@
 
 #define FPS_BUFFER_SIZE 5
 
+
 void init_gl(int width, int height)
 {
 	glViewport(0, 0, width, height);
@@ -155,11 +156,18 @@ void print_time_stats(long fps, long tps)
 	fflush(stdout);
 }
 
+
+int run = 1;
+vec2_t cursor_pos;
+int cursor_interaction;
+flock* flock_ptr;
+configuration* config;
+
 int main(int argc, char** argv)
 {
 	// Create a configuration object, and set the values to the defaults
-	configuration config;
-	if(!parse_arguments(argc, argv, &config)) return 0;
+	config = calloc(1, sizeof(configuration));
+	if(!parse_arguments(argc, argv, config)) return 0;
 
 	srand(time(NULL));
 
@@ -168,11 +176,10 @@ int main(int argc, char** argv)
 	glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 	glfwWindowHint(GLFW_SAMPLES, 4);
 
-	GLFWwindow* window = glfwCreateWindow(config.video.screen_width, config.video.screen_height, WINDOW_TITLE, NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(config->video.screen_width, config->video.screen_height, WINDOW_TITLE, NULL, NULL);
 	if(!window) printf("Unable to set video mode.\n");
 
 	// Register callbacks
-	callback_config_ptr = &config;
 	glfwSetCursorPosCallback(window, callback_cursormov);
 	glfwSetMouseButtonCallback(window, callback_mousebtn);
 	glfwSetKeyCallback(window, callback_keyboard);
@@ -184,23 +191,23 @@ int main(int argc, char** argv)
 
 	glfwMakeContextCurrent(window);
 
-	init_gl(config.video.screen_width, config.video.screen_height);
+	init_gl(config->video.screen_width, config->video.screen_height);
 	printf("Using OpenGL Version: %i.%i\n", glfwGetWindowAttrib(window, GLFW_CONTEXT_VERSION_MAJOR),
 						glfwGetWindowAttrib(window, GLFW_CONTEXT_VERSION_MINOR));
 
 	// Create our flock
-	flock* f = flock_create(&config);
+	flock_ptr = flock_create(config);
 
-	long* tps = calloc(sizeof(long), config.num_threads);
+	long* tps = calloc(sizeof(long), config->num_threads);
 
 // DISPATCH //
-	pthread_t* workers = calloc(sizeof(pthread_t), config.num_threads);
-        flock_update_worker_args* worker_args = calloc(sizeof(flock_update_worker_args), config.num_threads);
+	pthread_t* workers = calloc(sizeof(pthread_t), config->num_threads);
+        flock_update_worker_args* worker_args = calloc(sizeof(flock_update_worker_args), config->num_threads);
 
-        for(int i = 0; i < config.num_threads; i++)
-                worker_args[i] = (flock_update_worker_args){&run, i, tps, f, &config, &cursor_pos, &cursor_interaction};
+        for(int i = 0; i < config->num_threads; i++)
+                worker_args[i] = (flock_update_worker_args){&run, i, tps, flock_ptr, config, &cursor_pos, &cursor_interaction};
 
-        for(int i = 0; i < config.num_threads; i++)
+        for(int i = 0; i < config->num_threads; i++)
 		pthread_create(&workers[i], NULL, flock_update_worker_thread, (void*)&worker_args[i]);
 //////////////
 
@@ -211,29 +218,30 @@ int main(int argc, char** argv)
 
 	while(run && !glfwWindowShouldClose(window))
 	{
-		flock_render(window, f, &config);
+		flock_render(window, flock_ptr, config);
 		clock_gettime(CLOCK_MONOTONIC, &new_time);
 
 		frame_time_nsec = (new_time.tv_nsec - curr_time.tv_nsec) + (1000000000 * (new_time.tv_sec - curr_time.tv_sec));
 		curr_time = new_time;
 
-		long avg_tps = 0; for(int i = 0; i < config.num_threads; i++) avg_tps += tps[i];
-		avg_tps /= config.num_threads;
+		long avg_tps = 0; for(int i = 0; i < config->num_threads; i++) avg_tps += tps[i];
+		avg_tps /= config->num_threads;
 
 		print_time_stats(avg_fps(frame_time_nsec), avg_tps);
 
 		glfwPollEvents();
 	}
 
-        for(int i = 0; i < config.num_threads; i++)
+        for(int i = 0; i < config->num_threads; i++)
                 pthread_join(workers[i], NULL);
 
 	glfwDestroyWindow(window);
 
+	free(config);
 	free(tps);
         free(worker_args);
         free(workers);
-	flock_destroy(f);
+	flock_destroy(flock_ptr);
 
 	glfwTerminate();
 	return 0;
