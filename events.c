@@ -26,8 +26,6 @@ void callback_mousebtn(GLFWwindow* window, int button, int action, int mods)
         }
         else if(action == GLFW_PRESS)
         {
-		printf("Button pressed!\n");
-
                 switch(button)
                 {
                         case GLFW_MOUSE_BUTTON_LEFT:
@@ -47,8 +45,6 @@ void callback_keyboard(GLFWwindow* window, int key, int scancode, int action, in
 {
         if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) run = 0;
 	else if(key == GLFW_KEY_R && action == GLFW_PRESS) flock_randomize_acceleration(flock_ptr, config);
-
-	printf("flock_ptr: %i, callback_config_ptr: %i\n", flock_ptr, config);
 }
 
 extern void init_gl(int width, int height);
