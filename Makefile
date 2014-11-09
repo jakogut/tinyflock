@@ -3,7 +3,7 @@ LD = $(CC)
 
 CFLAGS = -Wall -pipe -Iinclude/ -std=gnu11 -march=native
 OFLAGS = 
-LFLAGS = -lm -lc -lGL -lglfw -lpthread
+LFLAGS = -lfann -lm -lc -lGL -lglfw -lpthread
 
 SOURCES = $(wildcard *.c)
 OBJECTS = $(SOURCES:.c=.o)
@@ -24,10 +24,13 @@ endif
 
 CFLAGS += $(OPTIMIZATION)
 
-all: tinyflock
+all: tinyflock nn
 
 tinyflock: modules $(OBJECTS)
 	$(LD) $(LFLAGS) $(OBJECTS) -o tinyflock
+
+nn: tinyflock
+	$(CC) $(LFLAGS) nn/flock_nn.c -o nn/flock_nn
 
 modules:
 	git submodule update --init
@@ -36,7 +39,7 @@ modules:
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -rf tinyflock  gmon.out *.save *.o core* vgcore*
+	rm -rf tinyflock nn/flock_nn gmon.out *.save *.o core* vgcore*
 
 rebuild: clean all
 
