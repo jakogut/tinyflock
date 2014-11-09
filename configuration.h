@@ -5,8 +5,8 @@
 #define NUM_THREADS 1
 
 // Default video configuration
-#define SCREEN_WIDTH    800
-#define SCREEN_HEIGHT   800
+#define SCREEN_WIDTH    400
+#define SCREEN_HEIGHT   400
 #define SCREEN_DEPTH    32
 
 // Limiting the frame rate to 50 helps free the processor for updates
@@ -17,7 +17,7 @@
 #define INFLUENCE_WEIGHT 80
 
 // Default boid parameters
-#define NUM_BOIDS 512
+#define NUM_BOIDS 256
 
 #define MAX_BOID_VELOCITY 5
 #define MIN_BOID_SEPARATION 5

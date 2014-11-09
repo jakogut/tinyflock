@@ -19,13 +19,7 @@ flock* flock_create(configuration* config)
 	f->acceleration = calloc(config->flock.size, sizeof(vec2_t));
 	f->velocity = calloc(config->flock.size, sizeof(vec2_t));
 
-	for(int i = 0; i < config->flock.size; i++)
-	{
-		f->location[i][0] = rand_range(0.0f, config->video.screen_width);
-		f->location[i][1] = rand_range(0.0f, config->video.screen_height);
-
-		flock_randomize_acceleration(f, config);
-	}
+	flock_randomize(f, config);
 
 	f->log = fopen(flock_log, "w");
 
@@ -46,10 +40,13 @@ void flock_destroy(flock* f, configuration* config)
 	free(f);
 }
 
-void flock_randomize_acceleration(flock* f, configuration* config)
+void flock_randomize(flock* f, configuration* config)
 {
 	for(int i = 0; i < config->flock.size; i++)
 	{
+		f->location[i][0] = rand_range(0.0f, config->video.screen_width);
+		f->location[i][1] = rand_range(0.0f, config->video.screen_height);
+
 		f->velocity[i][0] = rand_range((0.0f - config->flock.max_velocity), config->flock.max_velocity);
 		f->velocity[i][1] = rand_range((0.0f - config->flock.max_velocity), config->flock.max_velocity);
 	}

@@ -232,11 +232,11 @@ int main(int argc, char** argv)
 
 		print_time_stats(avg_fps(frame_time_nsec), avg_tps);
 
-		// Randomize flock acceleration every N seconds
+		// Randomize flock location every N seconds
 		ntimer = time(NULL);
-		if(ntimer - timer >= 5)
+		if(ntimer - timer >= 3)
 		{
-			flock_randomize_acceleration(flock_ptr, config);
+			flock_randomize(flock_ptr, config);
 			timer = ntimer;
 		}
 
