@@ -234,7 +234,7 @@ int main(int argc, char** argv)
 
 		// Randomize flock acceleration every N seconds
 		ntimer = time(NULL);
-		if(ntimer - timer >= 2)
+		if(ntimer - timer >= 5)
 		{
 			flock_randomize_acceleration(flock_ptr, config);
 			timer = ntimer;
@@ -252,7 +252,7 @@ int main(int argc, char** argv)
 	free(tps);
         free(worker_args);
         free(workers);
-	flock_destroy(flock_ptr);
+	flock_destroy(flock_ptr, config);
 
 	glfwTerminate();
 	return 0;

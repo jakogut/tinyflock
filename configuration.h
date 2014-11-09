@@ -6,7 +6,7 @@
 
 // Default video configuration
 #define SCREEN_WIDTH    640
-#define SCREEN_HEIGHT   480
+#define SCREEN_HEIGHT   640
 #define SCREEN_DEPTH    32
 
 // Limiting the frame rate to 50 helps free the processor for updates
@@ -20,8 +20,8 @@
 #define NUM_BOIDS 100
 
 #define MAX_BOID_VELOCITY 5
-#define MIN_BOID_SEPARATION 8
-#define MAX_BOID_STEERING_FORCE 0.03
+#define MIN_BOID_SEPARATION 5
+#define MAX_BOID_STEERING_FORCE 0.1
 #define NEIGHBORHOOD_RADIUS 30
 
 typedef struct

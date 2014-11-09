@@ -4,11 +4,12 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 #include <GLFW/glfw3.h>
 
 #define TPS_BUFFER_SIZE 5
+
+const char* flock_log = "flock.dat";
 
 flock* flock_create(configuration* config)
 {
@@ -26,11 +27,18 @@ flock* flock_create(configuration* config)
 		flock_randomize_acceleration(f, config);
 	}
 
+	f->log = fopen(flock_log, "w");
+
 	return f;
 }
 
-void flock_destroy(flock* f)
+void flock_destroy(flock* f, configuration* config)
 {
+	fseek(f->log, 0, SEEK_SET);
+	fprintf(f->log, "%i %i %i\n", f->num_examples, (config->flock.size * 2), (config->flock.size * 2));
+
+	fclose(f->log);
+
 	free(f->location);
 	free(f->acceleration);
 	free(f->velocity);
@@ -62,8 +70,18 @@ void* flock_update_worker_thread(void* arg)
 	struct timespec curr_time, new_time;
 	clock_gettime(CLOCK_MONOTONIC, &curr_time);
 
+	struct timespec sleep;
+	sleep.tv_nsec = (1000000000 / 30);
+
+	int width = args->config->video.screen_width, height = args->config->video.screen_height;
+
+	// Create empty line at start of the file. Before closing, this line will contain the number of epochs, inputs, and outputs
+	fprintf(args->f->log, "\n");
+
 	while(*args->run)
 	{
+		// Limit the number of samples we generate per second
+		nanosleep(&sleep, NULL);
 
 		clock_gettime(CLOCK_MONOTONIC, &new_time);
 		long tick_time_nsec = (new_time.tv_nsec - curr_time.tv_nsec) + (1000000000 * (new_time.tv_sec - curr_time.tv_sec));
@@ -78,6 +96,11 @@ void* flock_update_worker_thread(void* arg)
 		for(int i = 0; i < TPS_BUFFER_SIZE; i++) tps_avg += tps_buffer[i];
 		tps_avg /= TPS_BUFFER_SIZE;
 		args->ticks[args->thread_id] = tps_avg;
+
+		// -- Write location -- //
+		for(int i = 0; i < args->config->flock.size; i++)
+			fprintf(args->f->log, "%f %f ", ((args->f->location[i][0] - (0.5 * width)) / width), ((args->f->location[i][1] - (0.5 * height)) / height));
+		fprintf(args->f->log, "\n");
 
 		for(int i = begin_work; i < end_work; i++)
 		{
@@ -109,6 +132,12 @@ void* flock_update_worker_thread(void* arg)
 			args->f->location[i][1] -= args->config->video.screen_height * (args->f->location[i][1] > args->config->video.screen_height);
 			args->f->location[i][1] += args->config->video.screen_height * (args->f->location[i][1] < 0);
 		}
+
+		// -- Write velocity -- //
+		for(int i = 0; i < args->config->flock.size; i++)
+			fprintf(args->f->log, "%f %f ", args->f->velocity[i][0] / args->config->flock.max_velocity, args->f->velocity[i][1] / args->config->flock.max_velocity);
+		fprintf(args->f->log, "\n");
+		args->f->num_examples++;
 
 		++(*args->ticks);
 	}

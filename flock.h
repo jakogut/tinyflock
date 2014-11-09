@@ -4,6 +4,7 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GLFW/glfw3.h>
+#include <stdio.h>
 
 #include "VLIQ/vliq.h"
 #include "configuration.h"
@@ -13,10 +14,14 @@ typedef struct
 	vec2_t* location;
 	vec2_t* velocity;
 	vec2_t* acceleration;
+
+	FILE* log;
+	int num_examples;
+
 } flock;
 
 flock* flock_create(configuration* config);
-void flock_destroy(flock* f);
+void flock_destroy(flock* f, configuration* config);
 
 void flock_randomize_acceleration(flock* f, configuration* config);
 
