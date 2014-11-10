@@ -7,10 +7,10 @@ int main()
 
 	float desired_error = 0.05;
 
-	unsigned max_epochs = 1024,
-		 epochs_between_reports = 25;
+	unsigned max_epochs = 4096,
+		 epochs_between_reports = 1;
 
-	struct fann *ann = fann_create_standard(6, num_input, 512, 512, 512, 512, num_output);
+	struct fann *ann = fann_create_standard(9, num_input, 512, 512, 512, 512, 512, 512, 512, 512, 512, num_output);
 
 	fann_set_activation_function_hidden(ann, FANN_SIGMOID_SYMMETRIC);
 	fann_set_activation_function_output(ann, FANN_SIGMOID_SYMMETRIC);

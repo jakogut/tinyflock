@@ -19,7 +19,7 @@
 // Default boid parameters
 #define NUM_BOIDS 256
 
-#define MAX_BOID_VELOCITY 5
+#define MAX_BOID_VELOCITY 0.05
 #define MIN_BOID_SEPARATION 8
 #define MAX_BOID_STEERING_FORCE 0.03
 #define NEIGHBORHOOD_RADIUS 30

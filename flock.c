@@ -92,8 +92,8 @@ void* flock_update_worker_thread(void* arg)
 
 		for(int i = 0; i < flock_size; i++)
 		{
-			args->f->velocity[i][0] = ann_output[i * 2];
-			args->f->velocity[i][1] = ann_output[i * 2 + 1];
+			args->f->velocity[i][0] = ann_output[i * 2] * args->config->flock.max_velocity;
+			args->f->velocity[i][1] = ann_output[i * 2 + 1] * args->config->flock.max_velocity;
 		}
 
 		for(int i = 0; i < flock_size; i++)
