@@ -19,9 +19,9 @@
 // Default boid parameters
 #define NUM_BOIDS 6144
 
-#define MAX_BOID_VELOCITY 5
-#define MIN_BOID_SEPARATION 8
-#define MAX_BOID_STEERING_FORCE 0.03
+#define MAX_BOID_VELOCITY 3
+#define MIN_BOID_SEPARATION 10
+#define MAX_BOID_STEERING_FORCE 0.1
 #define NEIGHBORHOOD_RADIUS 30
 
 typedef struct

@@ -18,19 +18,13 @@ flock* flock_create(configuration* config)
 	f->acceleration = calloc(config->flock.size, sizeof(vec2_t));
 	f->velocity = calloc(config->flock.size, sizeof(vec2_t));
 
-	for(int i = 0; i < config->flock.size; i++)
-	{
-		f->location[i][0] = rand_range(0.0f, config->video.screen_width);
-		f->location[i][1] = rand_range(0.0f, config->video.screen_height);
-
-		flock_randomize_acceleration(f, config);
-	}
+	flock_randomize_location(f, config);
+	flock_randomize_velocity(f, config);
 
 	return f;
 }
 
-void flock_destroy(flock* f)
-{
+void flock_destroy(flock* f) {
 	free(f->location);
 	free(f->acceleration);
 	free(f->velocity);
@@ -38,7 +32,18 @@ void flock_destroy(flock* f)
 	free(f);
 }
 
-void flock_randomize_acceleration(flock* f, configuration* config)
+void flock_randomize_location(flock* f, configuration* config) {
+
+	for(int i = 0; i < config->flock.size; i++)
+	{
+		f->location[i][0] = rand_range(0.0f, config->video.screen_width);
+		f->location[i][1] = rand_range(0.0f, config->video.screen_height);
+
+	}
+
+}
+
+void flock_randomize_velocity(flock* f, configuration* config)
 {
 	for(int i = 0; i < config->flock.size; i++)
 	{
@@ -132,15 +137,31 @@ void flock_influence(vec2_t* v, flock* f, int boid_id, float max_velocity, confi
 	register float neighborhood_radius_squared = powf(config->flock.neighborhood_radius, 2);
 	register float min_boid_separation_squared = powf(config->flock.min_separation, 2);
 
-	for(int idx = 0; idx < config->flock.size; idx++)
-	{
-		register float distance = vec2_distance_squared(f->location[idx], f->location[boid_id]);
+	const int sample_size = 10;
+	int sample_indices[sample_size] = {0};     // A sample of boid indices that are within the neighborhood radius of flock[boid_id]
+	float sample_distances[sample_size] = {0}; // distance^2 from flock[boid_id] to flock[sample_indices[i]]
 
+	// Giving the sample a random offset every frame helps separation be more effective
+	int offset = rand() % config->flock.size;
+	for(int i = offset, s = 0; i != (offset - 1) && s < sample_size; i++)
+	{
+		if(i == config->flock.size) i = 0;
+
+		float distance = vec2_distance_squared(f->location[i], f->location[boid_id]);
+		if(distance <= neighborhood_radius_squared)
+		{
+			sample_distances[s] = distance;
+			sample_indices[s++] = i;
+		}
+	}
+
+	for(int idx = 0; idx < sample_size; idx++)
+	{
 		vec2_t heading;
-		if(distance <= min_boid_separation_squared)
+		if(sample_distances[idx] <= min_boid_separation_squared)
 		{
 			// Separation
-			vec2_copy(heading, f->location[idx]);
+			vec2_copy(heading, f->location[sample_indices[idx]]);
 			vec2_sub(heading, f->location[boid_id]);
 			vec2_normalize(&heading);
 
@@ -148,16 +169,16 @@ void flock_influence(vec2_t* v, flock* f, int boid_id, float max_velocity, confi
 
 			population[1]++;
 		}
-		else if(distance <= neighborhood_radius_squared)
+		else
 		{
 			// Alignment
-			vec2_copy(heading, f->velocity[idx]);
+			vec2_copy(heading, f->velocity[sample_indices[idx]]);
 			vec2_normalize(&heading);
 
 			vec2_add(influence[0], heading);
 
 			// Cohesion
-			vec2_copy(heading, f->location[idx]);
+			vec2_copy(heading, f->location[sample_indices[idx]]);
 			vec2_sub(heading, f->location[boid_id]);
 			vec2_normalize(&heading);
 
