@@ -143,21 +143,31 @@ void flock_influence(vec2_t* v, flock* f, int boid_id, float max_velocity, confi
 	The second population is a total of the boids infringing on the target boid's space.*/
 	int population[2] = {0, 0};
 
-	float neighborhood_radius_squared = powf(config->flock.neighborhood_radius, 2);
-	float min_boid_separation_squared = powf(config->flock.min_separation, 2);
+	float nbhd_rad_sqd = powf(config->flock.neighborhood_radius, 2);
+	float min_bsep_sqd = powf(config->flock.min_separation, 2);
+
+	/* This is an interesting bit of code that reduces the problem space of the flocking function dramatically,
+	 * while changing the original O(n^n) complexity to O(n). The idea came from a paper I read a while back that
+	 * I can no longer source, which described how real flocks tend not to observe neighbors as individuals,
+	 * but rather the flock as a whole. We can imitate this by only considering a small random subset of the
+	 * flock per frame. In testing, I've found that it holds up with surprisingly small samples. */
 
 	const int sample_size = 10;
-	int sample_indices[sample_size] = {0};     // A sample of boid indices that are within the neighborhood radius of flock[boid_id]
-	float sample_distances[sample_size] = {0}; // distance^2 from flock[boid_id] to flock[sample_indices[i]]
+	int sample_indices[sample_size] = {0};
+	float sample_distances[sample_size] = {0};
 
-	// Giving the sample a random offset every frame helps separation be more effective
+	/* We want a fairly random subset of the flock here, but using a rand() for each boid is very slow,
+	 * not to mention thread-unsafe. Given the chaotic nature of the flock, we can simply get one rand(),
+	 * and use it as an offset for the starting point of our search for other boids inside our neighborhood.
+	 * This gives us a surprisingly efficient and effective sample generation method */
 	int offset = rand() % config->flock.size;
 	for(int i = offset, s = 0; i != (offset - 1) && s < sample_size; i++)
 	{
+		// If we reach the end of the flock without filling the queue, loop around
 		if(i == config->flock.size) i = 0;
 
 		float distance = vec2_distance_squared(f->location[i], f->location[boid_id]);
-		if(distance <= neighborhood_radius_squared)
+		if(distance <= nbhd_rad_sqd)
 		{
 			sample_distances[s] = distance;
 			sample_indices[s++] = i;
@@ -167,7 +177,7 @@ void flock_influence(vec2_t* v, flock* f, int boid_id, float max_velocity, confi
 	for(int idx = 0; idx < sample_size; idx++)
 	{
 		vec2_t heading;
-		if(sample_distances[idx] <= min_boid_separation_squared)
+		if(sample_distances[idx] <= min_bsep_sqd)
 		{
 			// Separation
 			vec2_copy(heading, f->location[sample_indices[idx]]);
