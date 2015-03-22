@@ -143,8 +143,8 @@ void flock_influence(vec2_t* v, flock* f, int boid_id, float max_velocity, confi
 	The second population is a total of the boids infringing on the target boid's space.*/
 	int population[2] = {0, 0};
 
-	register float neighborhood_radius_squared = powf(config->flock.neighborhood_radius, 2);
-	register float min_boid_separation_squared = powf(config->flock.min_separation, 2);
+	float neighborhood_radius_squared = powf(config->flock.neighborhood_radius, 2);
+	float min_boid_separation_squared = powf(config->flock.min_separation, 2);
 
 	const int sample_size = 10;
 	int sample_indices[sample_size] = {0};     // A sample of boid indices that are within the neighborhood radius of flock[boid_id]
