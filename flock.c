@@ -53,6 +53,17 @@ void flock_randomize_velocity(flock* f, configuration* config)
 	}
 }
 
+static void boid_wrap_coord(flock *f, int idx, configuration *config)
+{
+	int sw = config->video.screen_width, sh = config->video.screen_height;
+
+	f->location[idx][0] -= sw * (f->location[idx][0] > sw);
+	f->location[idx][0] += sw * (f->location[idx][0] < 0);
+
+	f->location[idx][1] -= sh * (f->location[idx][1] > sh);
+	f->location[idx][1] += sh * (f->location[idx][1] < 0);
+}
+
 void* flock_update_worker_thread(void* arg)
 {
 	flock_update_worker_args* args = (flock_update_worker_args*)arg;
@@ -72,7 +83,8 @@ void* flock_update_worker_thread(void* arg)
 	{
 
 		clock_gettime(CLOCK_MONOTONIC, &new_time);
-		long tick_time_nsec = (new_time.tv_nsec - curr_time.tv_nsec) + (1000000000 * (new_time.tv_sec - curr_time.tv_sec));
+		long tick_time_nsec = 	(new_time.tv_nsec - curr_time.tv_nsec) +
+					(1000000000 * (new_time.tv_sec - curr_time.tv_sec));
 		curr_time = new_time;
 
 		long ticks_per_second = 1000000000 / tick_time_nsec;
@@ -108,12 +120,8 @@ void* flock_update_worker_thread(void* arg)
 			// Reset the acceleration vectors for the flock
 			vec2_zero(args->f->acceleration[i]);
 
-			// Wrap coordinates
-			args->f->location[i][0] -= args->config->video.screen_width * (args->f->location[i][0] > args->config->video.screen_width);
-			args->f->location[i][0] += args->config->video.screen_width * (args->f->location[i][0] < 0);
-
-			args->f->location[i][1] -= args->config->video.screen_height * (args->f->location[i][1] > args->config->video.screen_height);
-			args->f->location[i][1] += args->config->video.screen_height * (args->f->location[i][1] < 0);
+			// Wrap location coordinates
+			boid_wrap_coord(args->f, i, args->config);
 		}
 
 		++(*args->ticks);
