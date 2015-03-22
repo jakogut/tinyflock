@@ -174,7 +174,7 @@ int main(int argc, char** argv)
 	glfwInit();
 
 	glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
-//	glfwWindowHint(GLFW_SAMPLES, 8);
+	glfwWindowHint(GLFW_SAMPLES, 8);
 
 	GLFWwindow* window = glfwCreateWindow(config->video.screen_width, config->video.screen_height, WINDOW_TITLE, NULL, NULL);
 	if(!window) printf("Unable to set video mode.\n");

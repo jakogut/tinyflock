@@ -47,8 +47,9 @@ void flock_randomize_velocity(flock* f, configuration* config)
 {
 	for(int i = 0; i < config->flock.size; i++)
 	{
-		f->velocity[i][0] = rand_range((0.0f - config->flock.max_velocity), config->flock.max_velocity);
-		f->velocity[i][1] = rand_range((0.0f - config->flock.max_velocity), config->flock.max_velocity);
+		float* mv = &config->flock.max_velocity;
+		f->velocity[i][0] = rand_range(-(*mv), *mv);
+		f->velocity[i][1] = rand_range(-(*mv), *mv);
 	}
 }
 
