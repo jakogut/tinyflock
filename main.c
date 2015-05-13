@@ -104,8 +104,7 @@ int parse_arguments(int argc, char** argv, configuration* config)
 	config->flock.neighborhood_radius = NEIGHBORHOOD_RADIUS;
 
 	// Parse arguments
-	for(int i = 1; i < argc; i++)
-	{
+	for(int i = 1; i < argc; i++) {
 		if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
 			return print_help();
 		else if(strcmp(argv[i], "--width") == 0)
@@ -142,7 +141,8 @@ long avg_fps(long frame_time_nsec)
 	long frames_per_second = 1000000000 / frame_time_nsec;
 
 	static long fps_buffer[FPS_BUFFER_SIZE];
-	for(int i = FPS_BUFFER_SIZE - 1; i != 0; i--) fps_buffer[i] = fps_buffer[i - 1];
+	for(int i = FPS_BUFFER_SIZE - 1; i != 0; i--)
+		fps_buffer[i] = fps_buffer[i - 1];
 	fps_buffer[0] = frames_per_second;
 
 	long fps_avg = 0;
@@ -216,8 +216,7 @@ int main(int argc, char** argv)
 
         clock_gettime(CLOCK_MONOTONIC, &curr_time);
 
-	while(run && !glfwWindowShouldClose(window))
-	{
+	while(run && !glfwWindowShouldClose(window)) {
 		flock_render(window, flock_ptr, config);
 		clock_gettime(CLOCK_MONOTONIC, &new_time);
 

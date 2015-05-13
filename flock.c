@@ -24,7 +24,8 @@ flock* flock_create(configuration* config)
 	return f;
 }
 
-void flock_destroy(flock* f) {
+void flock_destroy(flock* f)
+{
 	free(f->location);
 	free(f->acceleration);
 	free(f->velocity);
@@ -32,21 +33,18 @@ void flock_destroy(flock* f) {
 	free(f);
 }
 
-void flock_randomize_location(flock* f, configuration* config) {
-
-	for(int i = 0; i < config->flock.size; i++)
-	{
+void flock_randomize_location(flock* f, configuration* config)
+{
+	for(int i = 0; i < config->flock.size; i++) {
 		f->location[i][0] = rand_range(0.0f, config->video.screen_width);
 		f->location[i][1] = rand_range(0.0f, config->video.screen_height);
 
 	}
-
 }
 
 void flock_randomize_velocity(flock* f, configuration* config)
 {
-	for(int i = 0; i < config->flock.size; i++)
-	{
+	for(int i = 0; i < config->flock.size; i++) {
 		float* mv = &config->flock.max_velocity;
 		f->velocity[i][0] = rand_range(-(*mv), *mv);
 		f->velocity[i][1] = rand_range(-(*mv), *mv);
@@ -79,9 +77,7 @@ void* flock_update_worker_thread(void* arg)
 	struct timespec curr_time, new_time;
 	clock_gettime(CLOCK_MONOTONIC, &curr_time);
 
-	while(*args->run)
-	{
-
+	while(*args->run) {
 		clock_gettime(CLOCK_MONOTONIC, &new_time);
 		long tick_time_nsec = 	(new_time.tv_nsec - curr_time.tv_nsec) +
 					(1000000000 * (new_time.tv_sec - curr_time.tv_sec));
@@ -97,8 +93,7 @@ void* flock_update_worker_thread(void* arg)
 		tps_avg /= TPS_BUFFER_SIZE;
 		args->ticks[args->thread_id] = tps_avg;
 
-		for(int i = begin_work; i < end_work; i++)
-		{
+		for(int i = begin_work; i < end_work; i++) {
 			// Calculate boid movement
 			float delta = args->config->flock.max_velocity * (60.0 / tps_avg);
 			flock_influence(&args->f->acceleration[i], args->f, i, delta, args->config);
@@ -161,14 +156,12 @@ void flock_influence(vec2_t* v, flock* f, int boid_id, float max_velocity, confi
 	 * and use it as an offset for the starting point of our search for other boids inside our neighborhood.
 	 * This gives us a surprisingly efficient and effective sample generation method */
 	int offset = rand() % config->flock.size;
-	for(int i = offset, s = 0; i != (offset - 1) && s < sample_size; i++)
-	{
+	for(int i = offset, s = 0; i != (offset - 1) && s < sample_size; i++) {
 		// If we reach the end of the flock without filling the queue, loop around
 		if(i == config->flock.size) i = 0;
 
 		float distance = vec2_distance_squared(f->location[i], f->location[boid_id]);
-		if(distance <= nbhd_rad_sqd)
-		{
+		if(distance <= nbhd_rad_sqd) {
 			sample_distances[s] = distance;
 			sample_indices[s++] = i;
 		}
@@ -177,8 +170,7 @@ void flock_influence(vec2_t* v, flock* f, int boid_id, float max_velocity, confi
 	for(int idx = 0; idx < sample_size; idx++)
 	{
 		vec2_t heading;
-		if(sample_distances[idx] <= min_bsep_sqd)
-		{
+		if(sample_distances[idx] <= min_bsep_sqd) {
 			// Separation
 			vec2_copy(heading, f->location[sample_indices[idx]]);
 			vec2_sub(heading, f->location[boid_id]);
@@ -188,8 +180,7 @@ void flock_influence(vec2_t* v, flock* f, int boid_id, float max_velocity, confi
 
 			population[1]++;
 		}
-		else
-		{
+		else {
 			// Alignment
 			vec2_copy(heading, f->velocity[sample_indices[idx]]);
 			vec2_normalize(&heading);
@@ -210,10 +201,8 @@ void flock_influence(vec2_t* v, flock* f, int boid_id, float max_velocity, confi
 		}
 	}
 
-	for(int i = 0; i < 2; i++)
-	{
-		if(vec2_magnitude(influence[i]) > 0)
-		{
+	for(int i = 0; i < 2; i++) {
+		if(vec2_magnitude(influence[i]) > 0) {
 			vec2_div_scalar(influence[i], population[i]);
 
 			vec2_normalize(&influence[i]);
@@ -261,4 +250,3 @@ float rand_range(float min, float max)
 
 	return num;
 }
-

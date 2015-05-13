@@ -19,24 +19,21 @@ void callback_cursormov(GLFWwindow* window, double x, double y)
 
 void callback_mousebtn(GLFWwindow* window, int button, int action, int mods)
 {
-        if(action == GLFW_RELEASE)
-        {
-                cursor_interaction = 0;
-                return;
+        if(action == GLFW_RELEASE) {
+		cursor_interaction = 0;
+		return;
         }
-        else if(action == GLFW_PRESS)
-        {
-                switch(button)
-                {
-                        case GLFW_MOUSE_BUTTON_LEFT:
-                                cursor_interaction = 1;
-                        break;
-                        case GLFW_MOUSE_BUTTON_RIGHT:
-                                cursor_interaction = 2;
-                        break;
-                        default:
-                                cursor_interaction = 0;
-                        break;
+        else if(action == GLFW_PRESS) {
+                switch(button) {
+                case GLFW_MOUSE_BUTTON_LEFT:
+			cursor_interaction = 1;
+		break;
+		case GLFW_MOUSE_BUTTON_RIGHT:
+			cursor_interaction = 2;
+		break;
+		default:
+			cursor_interaction = 0;
+		break;
                 };
         }
 }
@@ -44,8 +41,7 @@ void callback_mousebtn(GLFWwindow* window, int button, int action, int mods)
 void callback_keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
         if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) run = 0;
-	else if(key == GLFW_KEY_R && action == GLFW_PRESS)
-	{
+	else if(key == GLFW_KEY_R && action == GLFW_PRESS) {
 		flock_randomize_location(flock_ptr, config);
 		flock_randomize_velocity(flock_ptr, config);
 	}

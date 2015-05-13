@@ -11,8 +11,7 @@ void flock_render(GLFWwindow* window, flock* f, configuration* config)
 
 	glColor3f(0.0f, 0.0f, 0.0f);
 
-	for(int i = 0; i < config->flock.size; i++)
-	{
+	for(int i = 0; i < config->flock.size; i++) {
 		vec2_t normalized_velocity = {f->velocity[i][0], f->velocity[i][1]};
 
 		vec2_normalize(&normalized_velocity);
