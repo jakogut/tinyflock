@@ -53,7 +53,7 @@ void flock_randomize_velocity(struct flock* f)
 	}
 }
 
-static void boid_wrap_coord(struct flock *f, int idx)
+static inline void boid_wrap_coord(struct flock *f, int idx)
 {
 	int sw = f->config->video.screen_width, sh = f->config->video.screen_height;
 
@@ -64,18 +64,12 @@ static void boid_wrap_coord(struct flock *f, int idx)
 	f->location[idx][1] += sh * (f->location[idx][1] < 0);
 }
 
-void* flock_update_worker_thread(void* arg)
+static long tps_buffer[TPS_BUFFER_SIZE];
+
+void *flock_update(void *arg)
 {
-	flock_update_worker_args* args = (flock_update_worker_args*)arg;
+	struct update_thread_arg *args = (struct update_thread_arg *)arg;
 
-	int work_size = args->f->config->flock.size / args->f->config->num_threads;
-	int begin_work = work_size * args->thread_id;
-
-	if(args->thread_id == args->f->config->num_threads - 1)
-		work_size += args->f->config->flock.size % args->f->config->num_threads;
-	int end_work = begin_work + work_size;
-
-	long tps_buffer[TPS_BUFFER_SIZE];
 	struct timespec curr_time, new_time;
 	clock_gettime(CLOCK_MONOTONIC, &curr_time);
 
@@ -93,9 +87,10 @@ void* flock_update_worker_thread(void* arg)
 		long tps_avg = 0;
 		for(int i = 0; i < TPS_BUFFER_SIZE; i++) tps_avg += tps_buffer[i];
 		tps_avg /= TPS_BUFFER_SIZE;
-		args->ticks[args->thread_id] = tps_avg;
+		*args->ticks = tps_avg;
 
-		for(int i = begin_work; i < end_work; i++) {
+		#pragma omp parallel for
+		for(int i = 0; i < args->f->config->flock.size; i++) {
 			// Calculate boid movement
 			float delta = args->f->config->flock.max_velocity * (60.0 / tps_avg);
 			flock_influence(&args->f->acceleration[i], args->f, i, delta);
@@ -120,8 +115,6 @@ void* flock_update_worker_thread(void* arg)
 			// Wrap location coordinates
 			boid_wrap_coord(args->f, i);
 		}
-
-		++(*args->ticks);
 	}
 
 	return NULL;
@@ -150,8 +143,11 @@ void flock_influence(vec2_t* v, struct flock* f, int boid_id, float max_velocity
 	 * flock per frame. In testing, I've found that it holds up with surprisingly small samples. */
 
 	const int sample_size = 10;
-	int sample_indices[sample_size] = {0};
-	float sample_distances[sample_size] = {0};
+	int sample_indices[sample_size];
+	float sample_distances[sample_size];
+
+	memset(sample_indices,   0, sample_size * sizeof(int));
+	memset(sample_distances, 0, sample_size * sizeof(float));
 
 	/* We want a fairly random subset of the flock here, but using a rand() for each boid is very slow,
 	 * not to mention thread-unsafe. Given the chaotic nature of the flock, we can simply get one rand(),
@@ -169,6 +165,7 @@ void flock_influence(vec2_t* v, struct flock* f, int boid_id, float max_velocity
 		}
 	}
 
+	#pragma omp parallel for
 	for(int idx = 0; idx < sample_size; idx++)
 	{
 		vec2_t heading;

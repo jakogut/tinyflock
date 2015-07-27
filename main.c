@@ -90,8 +90,6 @@ int print_help()
 
 int parse_arguments(int argc, char** argv, struct configuration* config)
 {
-	config->num_threads = NUM_THREADS;
-
 	config->video.screen_width = SCREEN_WIDTH;
 	config->video.screen_height = SCREEN_HEIGHT;
 	config->video.screen_depth = SCREEN_DEPTH;
@@ -125,8 +123,6 @@ int parse_arguments(int argc, char** argv, struct configuration* config)
 			config->flock.max_velocity = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-fn") == 0 || strcmp(argv[i], "--flock-neighborhood") == 0)
 			config->flock.neighborhood_radius = atoi(argv[++i]);
-		else if(strcmp(argv[i], "-t") == 0 || strcmp(argv[i], "--num-threads") == 0)
-			config->num_threads = atoi(argv[++i]);
 	}
 
 	// We want the influence radius to scale with the screen real estate
@@ -198,18 +194,21 @@ int main(int argc, char** argv)
 	// Create our flock
 	flock_ptr = flock_create(config);
 
-	long* tps = calloc(sizeof(long), config->num_threads);
+	long tps = 0;
 
-// DISPATCH //
-	pthread_t* workers = calloc(sizeof(pthread_t), config->num_threads);
-        flock_update_worker_args* worker_args = calloc(sizeof(flock_update_worker_args), config->num_threads);
+	// Create asynchronous update thread
+	pthread_t update_thread;
 
-        for(int i = 0; i < config->num_threads; i++)
-                worker_args[i] = (flock_update_worker_args){&run, i, tps, flock_ptr, &cursor_pos, &cursor_interaction};
+	struct update_thread_arg update_arg = {
+		.run = &run,
+		.ticks = &tps,
+		.f = flock_ptr,
 
-        for(int i = 0; i < config->num_threads; i++)
-		pthread_create(&workers[i], NULL, flock_update_worker_thread, (void*)&worker_args[i]);
-//////////////
+		.cursor_pos = &cursor_pos,
+		.cursor_interaction = &cursor_interaction
+	};
+
+	pthread_create(&update_thread, NULL, flock_update, (void*)&update_arg);
 
 	struct timespec curr_time, new_time;
 	long frame_time_nsec;
@@ -223,23 +222,16 @@ int main(int argc, char** argv)
 		frame_time_nsec = (new_time.tv_nsec - curr_time.tv_nsec) + (1000000000 * (new_time.tv_sec - curr_time.tv_sec));
 		curr_time = new_time;
 
-		long avg_tps = 0; for(int i = 0; i < config->num_threads; i++) avg_tps += tps[i];
-		avg_tps /= config->num_threads;
-
-		print_time_stats(avg_fps(frame_time_nsec), avg_tps);
+		print_time_stats(avg_fps(frame_time_nsec), tps);
 
 		glfwPollEvents();
 	}
 
-        for(int i = 0; i < config->num_threads; i++)
-                pthread_join(workers[i], NULL);
+	pthread_join(update_thread, NULL);
 
 	glfwDestroyWindow(window);
 
 	free(config);
-	free(tps);
-        free(worker_args);
-        free(workers);
 	flock_destroy(flock_ptr);
 
 	glfwTerminate();
