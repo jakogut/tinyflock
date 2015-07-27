@@ -14,12 +14,14 @@ flock* flock_create(configuration* config)
 {
 	flock* f = calloc(1, sizeof(flock));
 
+	f->config = config;
+
 	f->location = calloc(config->flock.size, sizeof(vec2_t));
 	f->acceleration = calloc(config->flock.size, sizeof(vec2_t));
 	f->velocity = calloc(config->flock.size, sizeof(vec2_t));
 
-	flock_randomize_location(f, config);
-	flock_randomize_velocity(f, config);
+	flock_randomize_location(f);
+	flock_randomize_velocity(f);
 
 	return f;
 }
@@ -33,27 +35,27 @@ void flock_destroy(flock* f)
 	free(f);
 }
 
-void flock_randomize_location(flock* f, configuration* config)
+void flock_randomize_location(flock* f)
 {
-	for(int i = 0; i < config->flock.size; i++) {
-		f->location[i][0] = rand_range(0.0f, config->video.screen_width);
-		f->location[i][1] = rand_range(0.0f, config->video.screen_height);
+	for(int i = 0; i < f->config->flock.size; i++) {
+		f->location[i][0] = rand_range(0.0f, f->config->video.screen_width);
+		f->location[i][1] = rand_range(0.0f, f->config->video.screen_height);
 
 	}
 }
 
-void flock_randomize_velocity(flock* f, configuration* config)
+void flock_randomize_velocity(flock* f)
 {
-	for(int i = 0; i < config->flock.size; i++) {
-		float* mv = &config->flock.max_velocity;
+	for(int i = 0; i < f->config->flock.size; i++) {
+		float* mv = &f->config->flock.max_velocity;
 		f->velocity[i][0] = rand_range(-(*mv), *mv);
 		f->velocity[i][1] = rand_range(-(*mv), *mv);
 	}
 }
 
-static void boid_wrap_coord(flock *f, int idx, configuration *config)
+static void boid_wrap_coord(flock *f, int idx)
 {
-	int sw = config->video.screen_width, sh = config->video.screen_height;
+	int sw = f->config->video.screen_width, sh = f->config->video.screen_height;
 
 	f->location[idx][0] -= sw * (f->location[idx][0] > sw);
 	f->location[idx][0] += sw * (f->location[idx][0] < 0);
@@ -66,11 +68,11 @@ void* flock_update_worker_thread(void* arg)
 {
 	flock_update_worker_args* args = (flock_update_worker_args*)arg;
 
-	int work_size = args->config->flock.size / args->config->num_threads;
+	int work_size = args->f->config->flock.size / args->f->config->num_threads;
 	int begin_work = work_size * args->thread_id;
 
-	if(args->thread_id == args->config->num_threads - 1)
-		work_size += args->config->flock.size % args->config->num_threads;
+	if(args->thread_id == args->f->config->num_threads - 1)
+		work_size += args->f->config->flock.size % args->f->config->num_threads;
 	int end_work = begin_work + work_size;
 
 	long tps_buffer[TPS_BUFFER_SIZE];
@@ -95,16 +97,16 @@ void* flock_update_worker_thread(void* arg)
 
 		for(int i = begin_work; i < end_work; i++) {
 			// Calculate boid movement
-			float delta = args->config->flock.max_velocity * (60.0 / tps_avg);
-			flock_influence(&args->f->acceleration[i], args->f, i, delta, args->config);
+			float delta = args->f->config->flock.max_velocity * (60.0 / tps_avg);
+			flock_influence(&args->f->acceleration[i], args->f, i, delta);
 
 			// Handle mouse input
 			switch(*args->cursor_interaction)
 			{
 				case 0: break;
-				case 1: if(vec2_distance(args->f->location[i], *args->cursor_pos) < args->config->input.influence_radius)
+				case 1: if(vec2_distance(args->f->location[i], *args->cursor_pos) < args->f->config->input.influence_radius)
 						boid_approach(args->f, i, *args->cursor_pos, (INFLUENCE_WEIGHT / tps_avg)); break;
-				case 2: if(vec2_distance(args->f->location[i], *args->cursor_pos) < args->config->input.influence_radius)
+				case 2: if(vec2_distance(args->f->location[i], *args->cursor_pos) < args->f->config->input.influence_radius)
 						boid_flee(args->f, i, *args->cursor_pos, (INFLUENCE_WEIGHT / tps_avg)); break;
 				default: break;
 			};
@@ -116,7 +118,7 @@ void* flock_update_worker_thread(void* arg)
 			vec2_zero(args->f->acceleration[i]);
 
 			// Wrap location coordinates
-			boid_wrap_coord(args->f, i, args->config);
+			boid_wrap_coord(args->f, i);
 		}
 
 		++(*args->ticks);
@@ -125,7 +127,7 @@ void* flock_update_worker_thread(void* arg)
 	return NULL;
 }
 
-void flock_influence(vec2_t* v, flock* f, int boid_id, float max_velocity, configuration* config)
+void flock_influence(vec2_t* v, flock* f, int boid_id, float max_velocity)
 {
      /* influence[0] = alignment & cohesion,
 	influence[2] = separation */
@@ -138,8 +140,8 @@ void flock_influence(vec2_t* v, flock* f, int boid_id, float max_velocity, confi
 	The second population is a total of the boids infringing on the target boid's space.*/
 	int population[2] = {0, 0};
 
-	float nbhd_rad_sqd = powf(config->flock.neighborhood_radius, 2);
-	float min_bsep_sqd = powf(config->flock.min_separation, 2);
+	float nbhd_rad_sqd = powf(f->config->flock.neighborhood_radius, 2);
+	float min_bsep_sqd = powf(f->config->flock.min_separation, 2);
 
 	/* This is an interesting bit of code that reduces the problem space of the flocking function dramatically,
 	 * while changing the original O(n^n) complexity to O(n). The idea came from a paper I read a while back that
@@ -155,10 +157,10 @@ void flock_influence(vec2_t* v, flock* f, int boid_id, float max_velocity, confi
 	 * not to mention thread-unsafe. Given the chaotic nature of the flock, we can simply get one rand(),
 	 * and use it as an offset for the starting point of our search for other boids inside our neighborhood.
 	 * This gives us a surprisingly efficient and effective sample generation method */
-	int offset = rand() % config->flock.size;
+	int offset = rand() % f->config->flock.size;
 	for(int i = offset, s = 0; i != (offset - 1) && s < sample_size; i++) {
 		// If we reach the end of the flock without filling the queue, loop around
-		if(i == config->flock.size) i = 0;
+		if(i == f->config->flock.size) i = 0;
 
 		float distance = vec2_distance_squared(f->location[i], f->location[boid_id]);
 		if(distance <= nbhd_rad_sqd) {
@@ -208,7 +210,7 @@ void flock_influence(vec2_t* v, flock* f, int boid_id, float max_velocity, confi
 			vec2_normalize(&influence[i]);
 			vec2_mul_scalar(influence[i], max_velocity);
 			vec2_sub(influence[i], f->velocity[boid_id]);
-			vec2_mul_scalar(influence[i], config->flock.max_steering_force);
+			vec2_mul_scalar(influence[i], f->config->flock.max_steering_force);
 
 			for(int j = 0; j < 2; j++) (*v)[j] += influence[i][j];
 		}

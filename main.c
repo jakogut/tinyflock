@@ -205,7 +205,7 @@ int main(int argc, char** argv)
         flock_update_worker_args* worker_args = calloc(sizeof(flock_update_worker_args), config->num_threads);
 
         for(int i = 0; i < config->num_threads; i++)
-                worker_args[i] = (flock_update_worker_args){&run, i, tps, flock_ptr, config, &cursor_pos, &cursor_interaction};
+                worker_args[i] = (flock_update_worker_args){&run, i, tps, flock_ptr, &cursor_pos, &cursor_interaction};
 
         for(int i = 0; i < config->num_threads; i++)
 		pthread_create(&workers[i], NULL, flock_update_worker_thread, (void*)&worker_args[i]);

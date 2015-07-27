@@ -42,8 +42,8 @@ void callback_keyboard(GLFWwindow* window, int key, int scancode, int action, in
 {
         if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) run = 0;
 	else if(key == GLFW_KEY_R && action == GLFW_PRESS) {
-		flock_randomize_location(flock_ptr, config);
-		flock_randomize_velocity(flock_ptr, config);
+		flock_randomize_location(flock_ptr);
+		flock_randomize_velocity(flock_ptr);
 	}
 }
 
