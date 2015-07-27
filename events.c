@@ -4,12 +4,13 @@
 
 #include "events.h"
 #include "flock.h"
+#include "configuration.h"
 
 extern int run;
 extern vec2_t cursor_pos;
 extern int cursor_interaction;
-extern flock* flock_ptr;
-extern configuration* config;
+extern struct flock* flock_ptr;
+extern struct configuration* config;
 
 void callback_cursormov(GLFWwindow* window, double x, double y)
 {

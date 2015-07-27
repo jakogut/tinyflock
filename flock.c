@@ -10,9 +10,9 @@
 
 #define TPS_BUFFER_SIZE 5
 
-flock* flock_create(configuration* config)
+struct flock* flock_create(struct configuration* config)
 {
-	flock* f = calloc(1, sizeof(flock));
+	struct flock* f = calloc(1, sizeof(struct flock));
 
 	f->config = config;
 
@@ -26,7 +26,7 @@ flock* flock_create(configuration* config)
 	return f;
 }
 
-void flock_destroy(flock* f)
+void flock_destroy(struct flock* f)
 {
 	free(f->location);
 	free(f->acceleration);
@@ -35,7 +35,7 @@ void flock_destroy(flock* f)
 	free(f);
 }
 
-void flock_randomize_location(flock* f)
+void flock_randomize_location(struct flock* f)
 {
 	for(int i = 0; i < f->config->flock.size; i++) {
 		f->location[i][0] = rand_range(0.0f, f->config->video.screen_width);
@@ -44,7 +44,7 @@ void flock_randomize_location(flock* f)
 	}
 }
 
-void flock_randomize_velocity(flock* f)
+void flock_randomize_velocity(struct flock* f)
 {
 	for(int i = 0; i < f->config->flock.size; i++) {
 		float* mv = &f->config->flock.max_velocity;
@@ -53,7 +53,7 @@ void flock_randomize_velocity(flock* f)
 	}
 }
 
-static void boid_wrap_coord(flock *f, int idx)
+static void boid_wrap_coord(struct flock *f, int idx)
 {
 	int sw = f->config->video.screen_width, sh = f->config->video.screen_height;
 
@@ -127,7 +127,7 @@ void* flock_update_worker_thread(void* arg)
 	return NULL;
 }
 
-void flock_influence(vec2_t* v, flock* f, int boid_id, float max_velocity)
+void flock_influence(vec2_t* v, struct flock* f, int boid_id, float max_velocity)
 {
      /* influence[0] = alignment & cohesion,
 	influence[2] = separation */
@@ -217,7 +217,7 @@ void flock_influence(vec2_t* v, flock* f, int boid_id, float max_velocity)
 	}
 }
 
-void boid_approach(flock* f, int boid_id, vec2_t v, float weight)
+void boid_approach(struct flock* f, int boid_id, vec2_t v, float weight)
 {
 	vec2_t heading;
 	vec2_copy(heading, v);
@@ -230,7 +230,7 @@ void boid_approach(flock* f, int boid_id, vec2_t v, float weight)
 	vec2_add(f->acceleration[boid_id], heading);
 }
 
-void boid_flee(flock* f, int boid_id, vec2_t v, float weight)
+void boid_flee(struct flock* f, int boid_id, vec2_t v, float weight)
 {
 	vec2_t heading;
 	vec2_copy(heading, v);

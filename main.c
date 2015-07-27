@@ -88,7 +88,7 @@ int print_help()
 	return 0;
 }
 
-int parse_arguments(int argc, char** argv, configuration* config)
+int parse_arguments(int argc, char** argv, struct configuration* config)
 {
 	config->num_threads = NUM_THREADS;
 
@@ -160,8 +160,8 @@ void print_time_stats(long fps, long tps)
 int run = 1;
 vec2_t cursor_pos;
 int cursor_interaction;
-flock* flock_ptr;
-configuration* config;
+struct flock* flock_ptr;
+struct configuration* config;
 
 int main(int argc, char** argv)
 {

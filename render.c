@@ -4,7 +4,7 @@
 
 #include <stdio.h>
 
-void flock_render(GLFWwindow* window, flock* f, configuration* config)
+void flock_render(GLFWwindow* window, struct flock* f, struct configuration* config)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();

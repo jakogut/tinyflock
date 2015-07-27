@@ -4,6 +4,6 @@
 #include "flock.h"
 #include "configuration.h"
 
-void flock_render(GLFWwindow* window, flock* f, configuration* config);
+void flock_render(GLFWwindow* window, struct flock* f, struct configuration* config);
 
 #endif

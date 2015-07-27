@@ -24,7 +24,7 @@
 #define MAX_BOID_STEERING_FORCE 0.1
 #define NEIGHBORHOOD_RADIUS 30
 
-typedef struct
+struct configuration
 {
 	int num_threads;
 
