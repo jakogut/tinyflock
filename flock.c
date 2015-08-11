@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include <GLFW/glfw3.h>
 
@@ -20,6 +21,17 @@ struct flock* flock_create(struct configuration* config)
 	f->acceleration = calloc(config->flock.size, sizeof(vec2_t));
 	f->velocity = calloc(config->flock.size, sizeof(vec2_t));
 
+	unsigned nthreads = sysconf(_SC_NPROCESSORS_ONLN);;
+
+	f->sample.size = f->config->flock.size * 0.002;
+	f->sample.indices = calloc(sizeof(int*), nthreads);
+	f->sample.distances = calloc(sizeof(float*), nthreads);
+
+	for (int i = 0; i < nthreads; i++) {
+		f->sample.indices[i] = calloc(sizeof(int), f->sample.size);
+		f->sample.distances[i] = calloc(sizeof(float), f->sample.size);
+	}
+
 	flock_randomize_location(f);
 	flock_randomize_velocity(f);
 
@@ -28,6 +40,14 @@ struct flock* flock_create(struct configuration* config)
 
 void flock_destroy(struct flock* f)
 {
+	for (int i = 0; i < sysconf(_SC_NPROCESSORS_ONLN); i++) {
+		free(f->sample.indices[i]);
+		free(f->sample.distances[i]);
+	}
+
+	free(f->sample.indices);
+	free(f->sample.distances);
+
 	free(f->location);
 	free(f->acceleration);
 	free(f->velocity);
@@ -120,6 +140,38 @@ void *flock_update(void *arg)
 	return NULL;
 }
 
+/* This is an interesting bit of code that reduces the problem space of the flocking function dramatically,
+ * while changing the original O(n^n) complexity to O(n). The idea came from a paper I read a while back that
+ * I can no longer source, which described how real flocks tend not to observe neighbors as individuals,
+ * but rather the flock as a whole. We can imitate this by only considering a small random subset of the
+ * flock per frame. In testing, I've found that it holds up with surprisingly small samples.  */
+static void flock_gen_sample(struct flock *f, unsigned boid_id)
+{
+	/* We want a fairly random subset of the flock here, but using a rand() for each boid is very slow,
+	 * not to mention thread-unsafe. Given the chaotic nature of the flock, we can simply get one rand(),
+	 * and use it as an offset for the starting point of our search for other boids inside our neighborhood.
+	 * This gives us a surprisingly efficient and effective sample generation method */
+
+	unsigned tid = omp_get_thread_num();
+
+	memset(f->sample.indices[tid],   0, f->sample.size * sizeof(int));
+	memset(f->sample.distances[tid], 0, f->sample.size * sizeof(float));
+
+	int offset = rand() % f->config->flock.size;
+	for(int i = offset, s = 0; i != (offset - 1) && s < f->sample.size; i++) {
+		// If we reach the end of the flock without filling the queue, loop around
+		if (i == f->config->flock.size) i = 0;
+
+		float distance = vec2_distance_squared(f->location[i], f->location[boid_id]);
+		float nbhd_rad_sqd = powf(f->config->flock.neighborhood_radius, 2);
+
+		if (distance <= nbhd_rad_sqd) {
+			f->sample.distances[tid][s] = distance;
+			f->sample.indices[tid][s++] = i;
+		}
+	}
+}
+
 void flock_influence(vec2_t* v, struct flock* f, int boid_id, float max_velocity)
 {
      /* influence[0] = alignment & cohesion,
@@ -132,46 +184,17 @@ void flock_influence(vec2_t* v, struct flock* f, int boid_id, float max_velocity
      /* The first population is a total of the boids within the neighborhood of the target boid.
 	The second population is a total of the boids infringing on the target boid's space.*/
 	int population[2] = {0, 0};
-
-	float nbhd_rad_sqd = powf(f->config->flock.neighborhood_radius, 2);
 	float min_bsep_sqd = powf(f->config->flock.min_separation, 2);
+	unsigned tid = omp_get_thread_num();
 
-	/* This is an interesting bit of code that reduces the problem space of the flocking function dramatically,
-	 * while changing the original O(n^n) complexity to O(n). The idea came from a paper I read a while back that
-	 * I can no longer source, which described how real flocks tend not to observe neighbors as individuals,
-	 * but rather the flock as a whole. We can imitate this by only considering a small random subset of the
-	 * flock per frame. In testing, I've found that it holds up with surprisingly small samples. */
+	flock_gen_sample(f, boid_id);
 
-	const int sample_size = 10;
-	int sample_indices[sample_size];
-	float sample_distances[sample_size];
-
-	memset(sample_indices,   0, sample_size * sizeof(int));
-	memset(sample_distances, 0, sample_size * sizeof(float));
-
-	/* We want a fairly random subset of the flock here, but using a rand() for each boid is very slow,
-	 * not to mention thread-unsafe. Given the chaotic nature of the flock, we can simply get one rand(),
-	 * and use it as an offset for the starting point of our search for other boids inside our neighborhood.
-	 * This gives us a surprisingly efficient and effective sample generation method */
-	int offset = rand() % f->config->flock.size;
-	for(int i = offset, s = 0; i != (offset - 1) && s < sample_size; i++) {
-		// If we reach the end of the flock without filling the queue, loop around
-		if(i == f->config->flock.size) i = 0;
-
-		float distance = vec2_distance_squared(f->location[i], f->location[boid_id]);
-		if(distance <= nbhd_rad_sqd) {
-			sample_distances[s] = distance;
-			sample_indices[s++] = i;
-		}
-	}
-
-	#pragma omp parallel for
-	for(int idx = 0; idx < sample_size; idx++)
+	for(int idx = 0; idx < f->sample.size; idx++)
 	{
 		vec2_t heading;
-		if(sample_distances[idx] <= min_bsep_sqd) {
+		if(f->sample.distances[tid][idx] <= min_bsep_sqd) {
 			// Separation
-			vec2_copy(heading, f->location[sample_indices[idx]]);
+			vec2_copy(heading, f->location[f->sample.indices[tid][idx]]);
 			vec2_sub(heading, f->location[boid_id]);
 			vec2_normalize(&heading);
 
@@ -181,13 +204,13 @@ void flock_influence(vec2_t* v, struct flock* f, int boid_id, float max_velocity
 		}
 		else {
 			// Alignment
-			vec2_copy(heading, f->velocity[sample_indices[idx]]);
+			vec2_copy(heading, f->velocity[f->sample.indices[tid][idx]]);
 			vec2_normalize(&heading);
 
 			vec2_add(influence[0], heading);
 
 			// Cohesion
-			vec2_copy(heading, f->location[sample_indices[idx]]);
+			vec2_copy(heading, f->location[f->sample.indices[tid][idx]]);
 			vec2_sub(heading, f->location[boid_id]);
 			vec2_normalize(&heading);
 

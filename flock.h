@@ -4,18 +4,27 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GLFW/glfw3.h>
+#include <omp.h>
 
 #include "VLIQ/vliq.h"
 #include "configuration.h"
 
+struct flock_sample
+{
+	size_t size;
+	int **indices;
+	float **distances;
+};
+
 struct flock
 {
 	struct configuration *config;
+	struct flock_sample sample;
 
-	vec2_t* location;
-	vec2_t* velocity;
-	vec2_t* acceleration;
-} flock;
+	vec2_t *location;
+	vec2_t *velocity;
+	vec2_t *acceleration;
+};
 
 struct flock* flock_create(struct configuration* config);
 void flock_destroy(struct flock* f);
