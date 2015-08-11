@@ -78,11 +78,6 @@ int print_help()
 		"-fs | --flock-separation\n\tSpecify a minimum distance to keep from neighbors.\n\n"
 		"-fv | --flock-velocity\n\tSpecify a maximum velocity a boid can travel.\n\n"
 		"-fn | --flock-neighborhood\n\tSpecify the size of the neighborhood a boid can see.\n\n"
-
-		"Misc.\n"
-		"------------------------------------------------------------\n"
-		"-t | --num-threads\n\tSpecify the number of worker threads used to\n"
-		"\tcalculate boid movement.\n"
 	);
 
 	return 0;
