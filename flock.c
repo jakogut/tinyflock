@@ -23,7 +23,7 @@ struct flock* flock_create(struct configuration* config)
 
 	unsigned nthreads = sysconf(_SC_NPROCESSORS_ONLN);;
 
-	f->sample.size = f->config->flock.size * 0.002;
+	f->sample.size = f->config->flock.size * 0.0015;
 	f->sample.indices = calloc(sizeof(int*), nthreads);
 	f->sample.distances = calloc(sizeof(float*), nthreads);
 
@@ -154,8 +154,8 @@ static void flock_gen_sample(struct flock *f, unsigned boid_id)
 
 	unsigned tid = omp_get_thread_num();
 
-	memset(f->sample.indices[tid],   0, f->sample.size * sizeof(int));
-	memset(f->sample.distances[tid], 0, f->sample.size * sizeof(float));
+	memset(f->sample.indices[tid],   -1, f->sample.size * sizeof(int));
+	memset(f->sample.distances[tid], -1, f->sample.size * sizeof(float));
 
 	int offset = rand() % f->config->flock.size;
 	for(int i = offset, s = 0; i != (offset - 1) && s < f->sample.size; i++) {
@@ -191,6 +191,9 @@ void flock_influence(vec2_t* v, struct flock* f, int boid_id, float max_velocity
 
 	for(int idx = 0; idx < f->sample.size; idx++)
 	{
+		if(f->sample.indices[tid][idx] == -1)
+			continue;
+
 		vec2_t heading;
 		if(f->sample.distances[tid][idx] <= min_bsep_sqd) {
 			// Separation
