@@ -2,3 +2,6 @@
 .deps/
 tinyflock
 *.save
+CMakeCache.txt
+CMakeFiles
+*.cmake
