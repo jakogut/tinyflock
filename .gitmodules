@@ -1,3 +1,6 @@
 [submodule "include/VLIQ"]
 	path = include/VLIQ
 	url = git://github.com/jakogut/VLIQ.git
+[submodule "glfw"]
+	path = glfw
+	url = https://github.com/glfw/glfw.git

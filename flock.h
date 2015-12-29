@@ -1,6 +1,10 @@
 #ifndef FLOCK_H_
 #define FLOCK_H_
 
+#ifdef __WIN32
+#include <windef.h>
+#endif
+
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GLFW/glfw3.h>
