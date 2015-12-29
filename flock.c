@@ -11,6 +11,12 @@
 
 #define TPS_BUFFER_SIZE 5
 
+#ifdef __WIN32
+#define CORE_COUNT omp_get_num_threads()
+#else
+#define CORE_COUNT sysconf(_SC_NPROCESSORS_ONLN)
+#endif
+
 struct flock* flock_create(struct configuration* config)
 {
 	struct flock* f = calloc(1, sizeof(struct flock));
@@ -21,7 +27,7 @@ struct flock* flock_create(struct configuration* config)
 	f->acceleration = calloc(config->flock.size, sizeof(vec2_t));
 	f->velocity = calloc(config->flock.size, sizeof(vec2_t));
 
-	unsigned nthreads = sysconf(_SC_NPROCESSORS_ONLN);;
+	unsigned nthreads = CORE_COUNT;
 
 	f->sample.size = f->config->flock.size * 0.0015;
 	f->sample.indices = calloc(sizeof(int*), nthreads);
@@ -40,7 +46,7 @@ struct flock* flock_create(struct configuration* config)
 
 void flock_destroy(struct flock* f)
 {
-	for (int i = 0; i < sysconf(_SC_NPROCESSORS_ONLN); i++) {
+	for (int i = 0; i < CORE_COUNT; i++) {
 		free(f->sample.indices[i]);
 		free(f->sample.distances[i]);
 	}
