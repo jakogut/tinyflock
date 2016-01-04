@@ -1,39 +1,34 @@
-------------------------------
---- CLONING ------------------
-------------------------------
+tinyflock
+=========
 
-Tinyflock depends on an external repository called VLIQ which has been added as a submodule.
+An interactive flocking demo
 
-The makefile will pull in this submodule automatically if it does not exist.
+Clone and build
+===============
 
-------------------------------
---- BUILDING -----------------
-------------------------------
+Requires CMake. On Unix systems, simply run
 
-Tinyflock depends on GLFW 3, so make sure you have the required headers and libraries installed before building.
-Using Debian, you can install the required package with the following command.
+    git clone --recursive https://github.com/jakogut/tinyflock
+    cd tinyflock
+    cmake .
 
-	apt-get install libglfw-dev
-
-The default compiler specified in Tinyflock's Makefile is Clang. I find that with this project, it compiles faster,
-and generates smaller, faster executables. However, your system may not have Clang installed, leading to the build
-failing. To resolve this, install Clang or specify "CC=c99" after invoking make.
+to generate a Makefile (NOTE: You may first need to install other libraries, like `xorg-dev` and `libglu1-mesa-dev` on Debian-based systems)
 
 To build on most unix platforms, run
 
-	make
+    make
 
 To clean all the intermediate build files, run
 
-	make clean
+    make clean
 
 To clean the project, then rebuild it, run
 
-	make rebuild
+    make rebuild
 
 To see what arguments the application will accept, run
 
-	./tinyflock --help
+    ./tinyflock --help
 
 The demo is interactive using the mouse (left button to attract boids,
 right to make them flee), as well as command line arguments, which are 
