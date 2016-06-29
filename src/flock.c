@@ -106,16 +106,20 @@ int write_history(char *filename, struct flock *f)
 	int idx = 0;
 	int pct_complete = 0;
 
+	int screen_width  = f->config->video.screen_width,
+	    screen_height = f->config->video.screen_height;
+
 	ptr = f->history;
 	while (ptr) {
 		if (!ptr->location || !ptr->velocity || !ptr->acceleration)
 			break;
 
 		for (int i = 0; i < f->sample.size+1; i++) {
+			fprintf(filp, "%.6f ", ((0.5 * screen_width) - ptr->location[i][0]) / screen_width);
+			fprintf(filp, "%.6f ", ((0.5 * screen_height) - ptr->location[i][1]) / screen_height);
+
 			for (int j = 0; j < 2; j++)
-				fprintf(filp, "%.6f ", ptr->location[i][j]);
-			for (int j = 0; j < 2; j++)
-				fprintf(filp, "%.6f ", ptr->velocity[i][j]);
+				fprintf(filp, "%.6f ", ptr->velocity[i][j] / f->config->flock.max_velocity);
 		}
 
 		fprintf(filp, "\n");
