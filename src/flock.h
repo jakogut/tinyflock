@@ -13,6 +13,14 @@
 #include "VLIQ/vliq.h"
 #include "configuration.h"
 
+struct flock_snapshot
+{
+	vec2_t *location, *velocity;
+	vec2_t *acceleration;
+
+	struct flock_snapshot *next;
+};
+
 struct flock_sample
 {
 	size_t size;
@@ -24,6 +32,10 @@ struct flock
 {
 	struct configuration *config;
 	struct flock_sample sample;
+
+	struct flock_snapshot *history;
+	struct flock_snapshot *history_tail;
+	int num_snapshots;
 
 	vec2_t *location;
 	vec2_t *velocity;

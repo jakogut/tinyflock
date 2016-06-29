@@ -29,6 +29,9 @@ struct flock* flock_create(struct configuration* config)
 
 	unsigned nthreads = CORE_COUNT;
 
+	f->history = calloc(1, sizeof(struct flock_snapshot));
+	f->history_tail = f->history;
+
 	f->sample.size = f->config->flock.size * 0.0015;
 	f->sample.indices = calloc(sizeof(int*), nthreads);
 	f->sample.distances = calloc(sizeof(float*), nthreads);
@@ -59,6 +62,80 @@ void flock_destroy(struct flock* f)
 	free(f->velocity);
 
 	free(f);
+}
+
+void flock_snapshot(struct flock *f, int boid_id, int *sample)
+{
+	f->history_tail->location = malloc(sizeof(vec2_t) * f->sample.size + 1);
+	f->history_tail->velocity = malloc(sizeof(vec2_t) * f->sample.size + 1);
+	f->history_tail->acceleration = malloc(sizeof(vec2_t));
+
+	for (int i = 0; i < f->sample.size + 1; i++) {
+		int src_idx = (i == 0 ? boid_id : sample[i]);
+		vec2_copy(f->history_tail->location[i], f->location[src_idx]);
+		vec2_copy(f->history_tail->velocity[i], f->velocity[src_idx]);
+	}
+
+	vec2_copy(f->history_tail->acceleration, f->acceleration[boid_id]);
+
+	f->history_tail->next = calloc(1, sizeof(struct flock_snapshot));
+	f->history_tail = f->history_tail->next;
+}
+
+int write_history(char *filename, struct flock *f)
+{
+	FILE *filp = fopen(filename, "w");
+	if (filp == NULL) return -1;
+
+	struct flock_snapshot *ptr = f->history;
+
+	// There are four inputs per boid, X and Y of location and velocity,
+	// and an additional boid for the target
+	unsigned num_inputs = ((f->sample.size+1 * 2) * 2);
+	unsigned num_samples = 0;
+
+	while (ptr) {
+		num_samples++;
+		ptr = ptr->next;
+	}
+
+	printf("\nWriting flock history to FANN training file\n");
+
+	fprintf(filp, "%i %i 2\n", num_samples, num_inputs);
+
+	int idx = 0;
+	int pct_complete = 0;
+
+	ptr = f->history;
+	while (ptr) {
+		if (!ptr->location || !ptr->velocity || !ptr->acceleration)
+			break;
+
+		for (int i = 0; i < f->sample.size+1; i++) {
+			for (int j = 0; j < 2; j++)
+				fprintf(filp, "%.6f ", ptr->location[i][j]);
+			for (int j = 0; j < 2; j++)
+				fprintf(filp, "%.6f ", ptr->velocity[i][j]);
+		}
+
+		fprintf(filp, "\n");
+
+		for (int i = 0; i < 2; i++)
+			fprintf(filp, "%.6f ", (*ptr->acceleration)[i]);
+
+		fprintf(filp, "\n");
+
+		int new_pct = ((100.0f / num_samples) * idx);
+		if (new_pct != pct_complete) {
+			printf("\r%i percent complete", new_pct);
+			fflush(stdout);
+
+			pct_complete = new_pct;
+		}
+
+		ptr = ptr->next;
+		idx++;
+	}
 }
 
 void flock_randomize_location(struct flock* f)
@@ -115,11 +192,22 @@ void *flock_update(void *arg)
 		tps_avg /= TPS_BUFFER_SIZE;
 		*args->ticks = tps_avg;
 
+		omp_lock_t snapshot_lock;
+		omp_init_lock(&snapshot_lock);
+
 		#pragma omp parallel for
 		for(int i = 0; i < args->f->config->flock.size; i++) {
 			// Calculate boid movement
 			float delta = args->f->config->flock.max_velocity * (60.0 / tps_avg);
 			flock_influence(&args->f->acceleration[i], args->f, i, delta);
+
+			int tid = omp_get_thread_num();
+			
+			if (strlen(args->f->config->capture_filename)) {
+				omp_set_lock(&snapshot_lock);
+				flock_snapshot(args->f, i, args->f->sample.indices[tid]);
+				omp_unset_lock(&snapshot_lock);
+			}
 
 			// Handle mouse input
 			switch(*args->cursor_interaction)
@@ -132,6 +220,7 @@ void *flock_update(void *arg)
 				default: break;
 			};
 
+
 			vec2_add(args->f->velocity[i], args->f->acceleration[i]);
 			vec2_add(args->f->location[i], args->f->velocity[i]);
 
@@ -141,6 +230,12 @@ void *flock_update(void *arg)
 			// Wrap location coordinates
 			boid_wrap_coord(args->f, i);
 		}
+
+	}
+
+	if (strlen(args->f->config->capture_filename)) {
+		int res;
+		res = write_history(args->f->config->capture_filename, args->f);
 	}
 
 	return NULL;
@@ -175,6 +270,7 @@ static void flock_gen_sample(struct flock *f, unsigned boid_id)
 			f->sample.distances[tid][s] = distance;
 			f->sample.indices[tid][s++] = i;
 		}
+
 	}
 }
 
