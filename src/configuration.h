@@ -23,6 +23,8 @@
 
 struct configuration
 {
+	char capture_filename[256];
+
 	struct
 	{
 		int screen_width, screen_height, screen_depth;

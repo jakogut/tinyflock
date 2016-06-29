@@ -49,6 +49,8 @@ int print_help()
 
 		"-h | --help\t\tPrint this help message.\n\n"
 
+		"--capture [filename]\t\tWrite training file\n\n"
+
 		"Video configuration\n"
 		"------------------------------------------------------------\n"
 
@@ -100,6 +102,8 @@ int parse_arguments(int argc, char** argv, struct configuration* config)
 	for(int i = 1; i < argc; i++) {
 		if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
 			return print_help();
+		if(strcmp(argv[i], "--capture") == 0)
+			strcpy(config->capture_filename, argv[++i]);
 		else if(strcmp(argv[i], "--width") == 0)
 			config->video.screen_width = atoi(argv[++i]);
 		else if(strcmp(argv[i], "--height") == 0)
