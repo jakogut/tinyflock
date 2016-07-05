@@ -186,10 +186,14 @@ void *flock_update(void *arg)
 	struct timespec curr_time, new_time;
 	clock_gettime(CLOCK_MONOTONIC, &curr_time);
 
-	while(*args->run) {
+        omp_lock_t snapshot_lock;
+        omp_init_lock(&snapshot_lock);
+
+        while(*args->run) {
 		clock_gettime(CLOCK_MONOTONIC, &new_time);
 		long tick_time_nsec = 	(new_time.tv_nsec - curr_time.tv_nsec) +
 					(1000000000 * (new_time.tv_sec - curr_time.tv_sec));
+
 		curr_time = new_time;
 
 		long ticks_per_second = 1000000000 / tick_time_nsec;
@@ -201,9 +205,6 @@ void *flock_update(void *arg)
 		for(int i = 0; i < TPS_BUFFER_SIZE; i++) tps_avg += tps_buffer[i];
 		tps_avg /= TPS_BUFFER_SIZE;
 		*args->ticks = tps_avg;
-
-		omp_lock_t snapshot_lock;
-		omp_init_lock(&snapshot_lock);
 
 		#pragma omp parallel for
 		for(int i = 0; i < args->f->config->flock.size; i++) {
@@ -360,7 +361,7 @@ void flock_influence_nn(vec2_t *v, struct flock *f, int boid_id, float max_veloc
 	flock_gen_sample(f, boid_id);
 	unsigned tid = omp_get_thread_num();
 
-	fann_type *input = malloc(sizeof(fann_type) * f->sample.size);
+	fann_type *input = calloc(sizeof(fann_type), (f->sample.size+1)*2*2);
 	fann_type *output;
 
 	struct fann *ann = fann_create_from_file((const char *)f->config->flock_nn.trained_net);
@@ -375,22 +376,26 @@ void flock_influence_nn(vec2_t *v, struct flock *f, int boid_id, float max_veloc
 		return;
 	}
 
+        int screen_width = f->config->video.screen_width,
+            screen_height = f->config->video.screen_height;
+
 	for (int i = 0; i < f->sample.size+1; i++) {
 		int idx = 0;
 		if (i == 0) idx = boid_id;
 		else idx = f->sample.indices[tid][i-1];
 
-		input[i*4+0] = f->location[idx][0];
-		input[i*4+1] = f->location[idx][1];
-		input[i*4+2] = f->velocity[idx][0];
-		input[i*4+3] = f->velocity[idx][1];
+		input[i*4+0] = ((0.5 * screen_width)  - f->location[idx][0]) / screen_width;
+		input[i*4+1] = ((0.5 * screen_height) - f->location[idx][1]) / screen_height;
+
+                for (int j = 0; j < 2; j++) input[(i*4)+(j+2)] = f->velocity[idx][j] / f->config->flock.max_velocity;
 	}
 
-	output = fann_run(ann, input);
-	vec2_copy(v, output);
+        output = fann_run(ann, input);
+        free(input);
 
-	if (input) free(input);
-	fann_destroy(ann);
+        for (int i = 0; i < 2; i++) (*v)[i] += output[i];
+
+        fann_destroy(ann);
 }
 
 void boid_approach(struct flock* f, int boid_id, vec2_t v, float weight)
