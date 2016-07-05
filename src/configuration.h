@@ -25,6 +25,10 @@
 #define TF_MODE_FLOCK_NN 1
 #define TF_MODE_TRAIN 2
 
+#define MAX_EPOCHS 256
+#define REPORT_INTERVAL 4
+#define DESIRED_ERROR 0.005
+
 struct configuration
 {
 	int mode;
@@ -65,6 +69,12 @@ struct configuration
 	{
 		char input[256];
 		char output[256];
+
+                int max_epochs;
+                int report_interval;
+                float desired_error;
+                
+                char network_dim[256];
 	} train;
 
 } configuration;
