@@ -72,7 +72,7 @@ void flock_snapshot(struct flock *f, int boid_id, int *sample)
 	f->history_tail->acceleration = malloc(sizeof(vec2_t));
 
 	for (int i = 0; i < f->sample.size + 1; i++) {
-		int src_idx = (i == 0 ? boid_id : sample[i]);
+		int src_idx = (i == 0 ? boid_id : sample[i-1]);
 		vec2_copy(f->history_tail->location[i], f->location[src_idx]);
 		vec2_copy(f->history_tail->velocity[i], f->velocity[src_idx]);
 	}
@@ -92,13 +92,16 @@ int write_history(char *filename, struct flock *f)
 
 	// There are four inputs per boid, X and Y of location and velocity,
 	// and an additional boid for the target
-	unsigned num_inputs = ((f->sample.size+1 * 2) * 2);
+	unsigned num_inputs = (((f->sample.size + 1) * 2) * 2);
 	unsigned num_samples = 0;
 
 	while (ptr) {
 		num_samples++;
 		ptr = ptr->next;
 	}
+
+	// Take that last increment off
+	num_samples--;
 
 	printf("\nWriting flock history to FANN training file\n");
 
@@ -141,6 +144,8 @@ int write_history(char *filename, struct flock *f)
 		ptr = ptr->next;
 		idx++;
 	}
+
+	fclose(filp);
 }
 
 void flock_randomize_location(struct flock* f)
