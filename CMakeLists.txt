@@ -20,7 +20,7 @@ if(NOT OPENGL_FOUND)
 endif(NOT OPENGL_FOUND)
 
 find_package(OpenMP REQUIRED)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+set(CMAKE_C_FLAGS "-std=gnu11 -O3 ${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS} ${OPENGL_C_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 if(NOT OPENMP_FOUND)
 	message(ERROR "OpenMP not found")
@@ -32,14 +32,13 @@ add_executable(
 	tinyflock
 	${SOURCE_FILES})
 
-add_definitions(-std=gnu11 -O3 ${OPENMP_C_FLAGS} ${OPENGL_C_FLAGS}) 
-
 add_subdirectory(glfw)
+add_subdirectory(fann)
 
 include_directories(include)
 include_directories(glfw/include)
 include_directories(src)
 
-target_link_libraries(tinyflock glfw
-	${GLFW_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${OPENGL_LIBRARIES})
+target_link_libraries(tinyflock glfw fann
+	${GLFW_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${OPENGL_LIBRARIES} ${FANN_LIBRARIES})
 
