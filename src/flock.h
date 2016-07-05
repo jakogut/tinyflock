@@ -60,6 +60,7 @@ struct update_thread_arg {
 void *flock_update(void *arg);
 
 void flock_influence(vec2_t* v, struct flock* f, int boid_id, float max_velocity);
+void flock_influence_nn(vec2_t* v, struct flock* f, int boid_id, float max_velocity);
 
 void boid_approach(struct flock* f, int boid_id, vec2_t v, float weight);
 void boid_flee(struct flock* f, int boid_id, vec2_t v, float weight);

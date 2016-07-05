@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include <fann.h>
 #include <GLFW/glfw3.h>
 
 #define TPS_BUFFER_SIZE 5
@@ -203,7 +204,10 @@ void *flock_update(void *arg)
 		for(int i = 0; i < args->f->config->flock.size; i++) {
 			// Calculate boid movement
 			float delta = args->f->config->flock.max_velocity * (60.0 / tps_avg);
-			flock_influence(&args->f->acceleration[i], args->f, i, delta);
+			if (args->f->config->mode == TF_MODE_FLOCK_CONV)
+				flock_influence(&args->f->acceleration[i], args->f, i, delta);
+			else if (args->f->config->mode == TF_MODE_FLOCK_NN)
+				flock_influence_nn(&args->f->acceleration[i], args->f, i, delta);
 
 			int tid = omp_get_thread_num();
 			
@@ -344,6 +348,44 @@ void flock_influence(vec2_t* v, struct flock* f, int boid_id, float max_velocity
 			for(int j = 0; j < 2; j++) (*v)[j] += influence[i][j];
 		}
 	}
+}
+
+void flock_influence_nn(vec2_t *v, struct flock *f, int boid_id, float max_velocity)
+{
+	flock_gen_sample(f, boid_id);
+	unsigned tid = omp_get_thread_num();
+
+	fann_type *input = malloc(sizeof(fann_type) * f->sample.size);
+	fann_type *output;
+
+	struct fann *ann = fann_create_from_file((const char *)f->config->flock_nn.trained_net);
+
+	if (ann == NULL) { 
+		printf("ANN creation failed!\n");
+		return;
+	}
+
+	if (input == NULL) {
+		printf("Failed creating ANN input array!\n");
+		return;
+	}
+
+	for (int i = 0; i < f->sample.size+1; i++) {
+		int idx = 0;
+		if (i == 0) idx = boid_id;
+		else idx = f->sample.indices[tid][i-1];
+
+		input[i*4+0] = f->location[idx][0];
+		input[i*4+1] = f->location[idx][1];
+		input[i*4+2] = f->velocity[idx][0];
+		input[i*4+3] = f->velocity[idx][1];
+	}
+
+	output = fann_run(ann, input);
+	vec2_copy(v, output);
+
+	if (input) free(input);
+	fann_destroy(ann);
 }
 
 void boid_approach(struct flock* f, int boid_id, vec2_t v, float weight)
