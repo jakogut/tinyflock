@@ -53,7 +53,6 @@ int print_help()
 		"Modes\n"
 		"------------------------------------------------------------\n"
 		"--flock\t\tSimulate using conventional flocking algorithm\n"
-		"\t--capture [filename]\t\tWrite training file\n\n"
 		"--flock-nn [network]\t\tSimulate using trained neural network\n\n"
 		"--train [input] [output]\t\tTrain neural network from file\n\n"
 
@@ -75,20 +74,49 @@ int print_help()
 		"--draw-anchor\n"
 		"\tDisplay a visual anchor to prevent motion sickness\n\n"
 
-		"Input Configuration\n"
-		"------------------------------------------------------------\n"
-		"-ir | --influence-radius [pixels]\n\tSpecify the maximum distance from the cursor that"
-		"\n\twill influence boids.\n\n"
-
 		"Flock configuration\n"
 		"------------------------------------------------------------\n"
 		"-fc | --flock-count\n\tSpecify the number of boids to create.\n\n"
 		"-fs | --flock-separation\n\tSpecify a minimum distance to keep from neighbors.\n\n"
 		"-fv | --flock-velocity\n\tSpecify a maximum velocity a boid can travel.\n\n"
 		"-fn | --flock-neighborhood\n\tSpecify the size of the neighborhood a boid can see.\n\n"
+		"--capture [filename]\n\tWrite training file\n\n"
+
+                "Training configuration\n"
+		"------------------------------------------------------------\n"
+                "--num-epochs\n\t Maximum epochs to train\n\n"
+                "--report-interval\n\t Number of epochs between reports\n\n"
+                "--desired-error\n\t The minimum error rate at which to stop training\n\n"
+                "--network-dim\n\t Dimensions of the neural network\n."
+                        "\t\tThe number of neurons per layer is specified as an integer\n"
+                        "\t\tLayers are delimited by comma, like so: 3,4,3\n\n"
 	);
 
 	return 0;
+}
+
+
+/* Parses text to array that can be fed to FANN to create a neural network 
+ * If int *parsed is NULL, it returns the number of layers.
+ * Otherwize, the size of each layer is writted to *parsed */
+int parse_network_dim(int *parsed, char *network_dim)
+{
+    char *token = strtok(network_dim, ":");
+
+    if (parsed == NULL && token == NULL) return -1;
+
+    int num_layers = 1;
+    while((token = strtok(NULL, ":")) != NULL) {
+        num_layers++;
+
+        if (parsed != NULL) {
+            int layer_dim = atoi(token);
+            parsed[num_layers - 1] = layer_dim;
+        }
+    }
+
+    if (parsed == NULL) return num_layers;
+    else return 0;
 }
 
 int parse_arguments(int argc, char** argv, struct configuration* config)
@@ -104,6 +132,10 @@ int parse_arguments(int argc, char** argv, struct configuration* config)
 	config->flock.max_steering_force = MAX_BOID_STEERING_FORCE;
 	config->flock.neighborhood_radius = NEIGHBORHOOD_RADIUS;
 
+        config->train.max_epochs = MAX_EPOCHS;
+        config->train.report_interval = REPORT_INTERVAL;
+        config->train.desired_error = DESIRED_ERROR;
+
 	// Parse arguments
 	for(int i = 1; i < argc; i++) {
 		if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
@@ -116,10 +148,22 @@ int parse_arguments(int argc, char** argv, struct configuration* config)
 
 		if(strcmp(argv[i], "--train") == 0) {
 			config->mode = TF_MODE_TRAIN;
-			strcpy(config->train.input, argv[++i]);
-			strcpy(config->train.output, argv[++i]);
+
+                        if (i < (argc - 1)) strcpy(config->train.input, argv[++i]);
+                        if (i < (argc - 1)) strcpy(config->train.output, argv[++i]);
 		}
 
+                /* Training options */
+                if(strcmp(argv[i], "--max-epochs") == 0)
+                    config->train.max_epochs = atoi(argv[++i]);
+                if(strcmp(argv[i], "--report-interval") == 0)
+                    config->train.report_interval = atoi(argv[++i]);
+                if(strcmp(argv[i], "--desired-error") == 0)
+                    config->train.desired_error = atof(argv[++i]);
+                if(strcmp(argv[i], "--network-dim") == 0)
+                    strcpy(config->train.network_dim, argv[++i]);
+
+                /* Flock options */
 		if(strcmp(argv[i], "--capture") == 0)
 			strcpy(config->capture_filename, argv[++i]);
 		else if(strcmp(argv[i], "--width") == 0)
@@ -130,8 +174,6 @@ int parse_arguments(int argc, char** argv, struct configuration* config)
 			config->video.screen_depth = atoi(argv[++i]);
 		else if(strcmp(argv[i], "--fps") == 0)
 			config->video.frames_per_second = atoi(argv[++i]);
-		else if(strcmp(argv[i], "-ir") == 0 || strcmp(argv[i], "--influence-radius") == 0)
-			config->input.influence_radius = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-fc") == 0 || strcmp(argv[i], "--flock-count") == 0)
 			config->flock.size = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-fs") == 0 || strcmp(argv[i], "--flock-separation") == 0)
@@ -219,7 +261,15 @@ void tf_flock()
 
 void tf_train()
 {
-	FILE *filp = fopen("flock.dat", "r");
+        if (!strlen(config->train.input)) {
+            printf("Input file/path not specified. Exiting.\n");
+            return;;
+        } else if (!strlen(config->train.output)) {
+            printf("Output file/path not specified. Exiting.\n");
+            return;
+        }
+
+	FILE *filp = fopen(config->train.input, "r");
 	if (filp == NULL) return;
 
 	int num_samples, num_input, num_output;
@@ -229,20 +279,36 @@ void tf_train()
 	printf("%i sample(s), %i input(s), %i output(s)\n",
 		num_samples, num_input, num_output);
 
-	unsigned max_epochs = 1024,
-		 epochs_between_reports = 4;
+        /*if (!strlen(config->train.network_dim)) {
+            printf("Network dimensions not specified. Exiting\n");
+            return;
+        }
 
-	float desired_error = 0.005;
+        int num_layers = parse_network_dim(NULL, config->train.network_dim);
+        int *network_dim = malloc(sizeof(int) * num_layers);
+        parse_network_dim(network_dim, config->train.network_dim);*/
 
-	struct fann *ann = fann_create_standard(
-		5, num_input, num_input, num_input, num_input, num_output
-	);
+        int num_layers = 5;
+        int network_dim[5] = {num_input, 3, 3, 3, num_output};
+
+        printf("Number of layers: %i Network dim:", num_layers);
+        for (int i = 0; i < num_layers; i++) {
+            char* formatter = (i == (num_layers - 1) ? " %i" : " %i,");
+            printf(formatter, network_dim[i]);
+        }
+
+        printf("\n");
+
+	struct fann *ann = fann_create_standard_array(num_layers, network_dim);
 
 	fann_set_activation_function_hidden(ann, FANN_SIGMOID_SYMMETRIC);
 	fann_set_activation_function_output(ann, FANN_SIGMOID_SYMMETRIC);
 
-	fann_train_on_file(ann, "flock.dat", max_epochs, epochs_between_reports, desired_error);
-	fann_save(ann, "flock.net");
+	fann_train_on_file(ann, config->train.input, config->train.max_epochs,
+            config->train.report_interval, config->train.desired_error
+        );
+
+	fann_save(ann, config->train.output);
 }
 
 int main(int argc, char** argv)
