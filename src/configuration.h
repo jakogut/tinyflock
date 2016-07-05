@@ -21,8 +21,14 @@
 #define MAX_BOID_STEERING_FORCE 0.1
 #define NEIGHBORHOOD_RADIUS 30
 
+#define TF_MODE_FLOCK_CONV 0
+#define TF_MODE_FLOCK_NN 1
+#define TF_MODE_TRAIN 2
+
 struct configuration
 {
+	int mode;
+
 	char capture_filename[256];
 
 	struct
@@ -49,6 +55,17 @@ struct configuration
 		int min_separation;
 
 	} flock;
+
+	struct
+	{
+		char trained_net[256];
+	} flock_nn;
+
+	struct
+	{
+		char input[256];
+		char output[256];
+	} train;
 
 } configuration;
 
