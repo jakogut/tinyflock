@@ -5,6 +5,7 @@
 #include <pthread.h>
 
 #include <GLFW/glfw3.h>
+#include <fann.h>
 
 #include "flock.h"
 #include "render.h"
@@ -49,7 +50,12 @@ int print_help()
 
 		"-h | --help\t\tPrint this help message.\n\n"
 
-		"--capture [filename]\t\tWrite training file\n\n"
+		"Modes\n"
+		"------------------------------------------------------------\n"
+		"--flock\t\tSimulate using conventional flocking algorithm\n"
+		"\t--capture [filename]\t\tWrite training file\n\n"
+		"--flock-nn [network]\t\tSimulate using trained neural network\n\n"
+		"--train [input] [output]\t\tTrain neural network from file\n\n"
 
 		"Video configuration\n"
 		"------------------------------------------------------------\n"
@@ -102,6 +108,18 @@ int parse_arguments(int argc, char** argv, struct configuration* config)
 	for(int i = 1; i < argc; i++) {
 		if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
 			return print_help();
+		
+		if(strcmp(argv[i], "--flock-nn") == 0) {
+			config->mode = TF_MODE_FLOCK_NN;
+			strcpy(config->flock_nn.trained_net, argv[++i]);
+		}
+
+		if(strcmp(argv[i], "--train") == 0) {
+			config->mode = TF_MODE_TRAIN;
+			strcpy(config->train.input, argv[++i]);
+			strcpy(config->train.output, argv[++i]);
+		}
+
 		if(strcmp(argv[i], "--capture") == 0)
 			strcpy(config->capture_filename, argv[++i]);
 		else if(strcmp(argv[i], "--width") == 0)
@@ -151,48 +169,15 @@ void print_time_stats(long fps, long tps)
 	fflush(stdout);
 }
 
-
 int run = 1;
 vec2_t cursor_pos;
 int cursor_interaction;
 struct flock* flock_ptr;
 struct configuration* config;
+GLFWwindow *window;
 
-int main(int argc, char** argv)
+void tf_flock()
 {
-	// Create a configuration object, and set the values to the defaults
-	config = calloc(1, sizeof(configuration));
-	if(!parse_arguments(argc, argv, config)) return 0;
-
-	srand(time(NULL));
-
-	glfwInit();
-
-	glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
-	glfwWindowHint(GLFW_SAMPLES, 8);
-
-	GLFWwindow* window = glfwCreateWindow(config->video.screen_width, config->video.screen_height, WINDOW_TITLE, NULL, NULL);
-	if(!window) printf("Unable to set video mode.\n");
-
-	// Register callbacks
-	glfwSetCursorPosCallback(window, callback_cursormov);
-	glfwSetMouseButtonCallback(window, callback_mousebtn);
-	glfwSetKeyCallback(window, callback_keyboard);
-	glfwSetWindowSizeCallback(window, callback_windowresize);
-	glfwSetWindowCloseCallback(window, callback_wclose);
-
-	vec2_zero(cursor_pos);
-	cursor_interaction = 0;
-
-	glfwMakeContextCurrent(window);
-
-	init_gl(config->video.screen_width, config->video.screen_height);
-	printf("Using OpenGL Version: %i.%i\n", glfwGetWindowAttrib(window, GLFW_CONTEXT_VERSION_MAJOR),
-						glfwGetWindowAttrib(window, GLFW_CONTEXT_VERSION_MINOR));
-
-	// Create our flock
-	flock_ptr = flock_create(config);
-
 	long tps = 0;
 
 	// Create asynchronous update thread
@@ -218,7 +203,10 @@ int main(int argc, char** argv)
 		flock_render(window, flock_ptr, config);
 		clock_gettime(CLOCK_MONOTONIC, &new_time);
 
-		frame_time_nsec = (new_time.tv_nsec - curr_time.tv_nsec) + (1000000000 * (new_time.tv_sec - curr_time.tv_sec));
+		frame_time_nsec = 
+			(new_time.tv_nsec - curr_time.tv_nsec) + 
+			(1000000000 * (new_time.tv_sec - curr_time.tv_sec));
+
 		curr_time = new_time;
 
 		print_time_stats(avg_fps(frame_time_nsec), tps);
@@ -227,6 +215,80 @@ int main(int argc, char** argv)
 	}
 
 	pthread_join(update_thread, NULL);
+}
+
+void tf_train()
+{
+	FILE *filp = fopen("flock.dat", "r");
+	if (filp == NULL) return;
+
+	int num_samples, num_input, num_output;
+	fscanf(filp, "%i %i %i", &num_samples, &num_input, &num_output);
+	fclose(filp);
+
+	printf("%i sample(s), %i input(s), %i output(s)\n",
+		num_samples, num_input, num_output);
+
+	unsigned max_epochs = 1024,
+		 epochs_between_reports = 4;
+
+	float desired_error = 0.005;
+
+	struct fann *ann = fann_create_standard(
+		5, num_input, num_input, num_input, num_input, num_output
+	);
+
+	fann_set_activation_function_hidden(ann, FANN_SIGMOID_SYMMETRIC);
+	fann_set_activation_function_output(ann, FANN_SIGMOID_SYMMETRIC);
+
+	fann_train_on_file(ann, "flock.dat", max_epochs, epochs_between_reports, desired_error);
+	fann_save(ann, "flock.net");
+}
+
+int main(int argc, char** argv)
+{
+	// Create a configuration object, and set the values to the defaults
+	config = calloc(1, sizeof(configuration));
+	if(!parse_arguments(argc, argv, config)) return 0;
+
+	if (config->mode == TF_MODE_TRAIN) {
+		tf_train();
+		return 0;
+	}
+
+	srand(time(NULL));
+
+	glfwInit();
+
+	glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
+	glfwWindowHint(GLFW_SAMPLES, 8);
+
+	window = glfwCreateWindow(
+		config->video.screen_width,
+		config->video.screen_height,
+		WINDOW_TITLE, NULL, NULL);
+
+	if(!window) printf("Unable to set video mode.\n");
+
+	// Register callbacks
+	glfwSetCursorPosCallback(window, callback_cursormov);
+	glfwSetMouseButtonCallback(window, callback_mousebtn);
+	glfwSetKeyCallback(window, callback_keyboard);
+	glfwSetWindowSizeCallback(window, callback_windowresize);
+	glfwSetWindowCloseCallback(window, callback_wclose);
+
+	vec2_zero(cursor_pos);
+	cursor_interaction = 0;
+
+	glfwMakeContextCurrent(window);
+
+	init_gl(config->video.screen_width, config->video.screen_height);
+	printf("Using OpenGL Version: %i.%i\n", glfwGetWindowAttrib(window, GLFW_CONTEXT_VERSION_MAJOR),
+						glfwGetWindowAttrib(window, GLFW_CONTEXT_VERSION_MINOR));
+
+	// Create our flock
+	flock_ptr = flock_create(config);
+	tf_flock();
 
 	glfwDestroyWindow(window);
 

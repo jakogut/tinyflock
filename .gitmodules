@@ -4,3 +4,6 @@
 [submodule "glfw"]
 	path = glfw
 	url = https://github.com/glfw/glfw.git
+[submodule "fann"]
+	path = fann
+	url = https://github.com/libfann/fann.git
