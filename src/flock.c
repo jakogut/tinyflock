@@ -205,17 +205,25 @@ void *flock_update(void *arg)
 		for(int i = 0; i < TPS_BUFFER_SIZE; i++) tps_avg += tps_buffer[i];
 		tps_avg /= TPS_BUFFER_SIZE;
 		*args->ticks = tps_avg;
+	
+		struct fann **ann;
+		if (args->f->config->mode == TF_MODE_FLOCK_NN) {
+			ann = (struct fann **)malloc(sizeof(struct ann *) * CORE_COUNT);
+			for (int i = 0; i < CORE_COUNT; i++)
+				ann[i] = fann_create_from_file((const char *)args->f->config->flock_nn.trained_net);
+		}
 
 		#pragma omp parallel for
 		for(int i = 0; i < args->f->config->flock.size; i++) {
+			int tid = omp_get_thread_num();
+
 			// Calculate boid movement
 			float delta = args->f->config->flock.max_velocity * (60.0 / tps_avg);
 			if (args->f->config->mode == TF_MODE_FLOCK_CONV)
 				flock_influence(&args->f->acceleration[i], args->f, i, delta);
-			else if (args->f->config->mode == TF_MODE_FLOCK_NN)
-				flock_influence_nn(&args->f->acceleration[i], args->f, i, delta);
-
-			int tid = omp_get_thread_num();
+			else if (args->f->config->mode == TF_MODE_FLOCK_NN) {
+				flock_influence_nn(&args->f->acceleration[i], args->f, i, delta, ann[tid]);
+			}
 			
 			if (strlen(args->f->config->capture_filename)) {
 				omp_set_lock(&snapshot_lock);
@@ -243,6 +251,12 @@ void *flock_update(void *arg)
 
 			// Wrap location coordinates
 			boid_wrap_coord(args->f, i);
+
+		}
+
+		if (args->f->config->mode == TF_MODE_FLOCK_NN) {
+			for (int i = 0; i < CORE_COUNT; i++) fann_destroy(ann[i]);
+			free(ann);	
 		}
 
 	}
@@ -356,15 +370,13 @@ void flock_influence(vec2_t* v, struct flock* f, int boid_id, float max_velocity
 	}
 }
 
-void flock_influence_nn(vec2_t *v, struct flock *f, int boid_id, float max_velocity)
+void flock_influence_nn(vec2_t *v, struct flock *f, int boid_id, float max_velocity, struct fann *ann)
 {
 	flock_gen_sample(f, boid_id);
 	unsigned tid = omp_get_thread_num();
 
 	fann_type *input = calloc(sizeof(fann_type), (f->sample.size+1)*2*2);
 	fann_type *output;
-
-	struct fann *ann = fann_create_from_file((const char *)f->config->flock_nn.trained_net);
 
 	if (ann == NULL) { 
 		printf("ANN creation failed!\n");
@@ -394,8 +406,6 @@ void flock_influence_nn(vec2_t *v, struct flock *f, int boid_id, float max_veloc
         free(input);
 
         for (int i = 0; i < 2; i++) (*v)[i] += output[i];
-
-        fann_destroy(ann);
 }
 
 void boid_approach(struct flock* f, int boid_id, vec2_t v, float weight)
