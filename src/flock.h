@@ -9,7 +9,10 @@
 #include <GL/glu.h>
 #include <GLFW/glfw3.h>
 #include <omp.h>
+
+#ifdef ENABLE_ANN
 #include <fann.h>
+#endif
 
 #include "VLIQ/vliq.h"
 #include "configuration.h"
@@ -61,7 +64,10 @@ struct update_thread_arg {
 void *flock_update(void *arg);
 
 void flock_influence(vec2_t* v, struct flock* f, int boid_id, float max_velocity);
+
+#ifdef ENABLE_ANN
 void flock_influence_nn(vec2_t* v, struct flock* f, int boid_id, float max_velocity, struct fann *ann);
+#endif
 
 void boid_approach(struct flock* f, int boid_id, vec2_t v, float weight);
 void boid_flee(struct flock* f, int boid_id, vec2_t v, float weight);

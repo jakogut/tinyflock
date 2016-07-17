@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include <fann.h>
 #include <GLFW/glfw3.h>
 
 #define TPS_BUFFER_SIZE 5
@@ -205,13 +204,16 @@ void *flock_update(void *arg)
 		for(int i = 0; i < TPS_BUFFER_SIZE; i++) tps_avg += tps_buffer[i];
 		tps_avg /= TPS_BUFFER_SIZE;
 		*args->ticks = tps_avg;
-	
+
+                #ifdef ENABLE_ANN
 		struct fann **ann;
+
 		if (args->f->config->mode == TF_MODE_FLOCK_NN) {
 			ann = (struct fann **)malloc(sizeof(struct ann *) * CORE_COUNT);
 			for (int i = 0; i < CORE_COUNT; i++)
 				ann[i] = fann_create_from_file((const char *)args->f->config->flock_nn.trained_net);
 		}
+                #endif
 
 		#pragma omp parallel for
 		for(int i = 0; i < args->f->config->flock.size; i++) {
@@ -219,11 +221,16 @@ void *flock_update(void *arg)
 
 			// Calculate boid movement
 			float delta = args->f->config->flock.max_velocity * (60.0 / tps_avg);
+
+                        #ifdef ENABLE_ANN
 			if (args->f->config->mode == TF_MODE_FLOCK_CONV)
 				flock_influence(&args->f->acceleration[i], args->f, i, delta);
 			else if (args->f->config->mode == TF_MODE_FLOCK_NN) {
 				flock_influence_nn(&args->f->acceleration[i], args->f, i, delta, ann[tid]);
 			}
+                        #else
+                        flock_influence(&args->f->acceleration[i], args->f, i, delta);
+                        #endif
 			
 			if (strlen(args->f->config->capture_filename)) {
 				omp_set_lock(&snapshot_lock);
@@ -254,10 +261,12 @@ void *flock_update(void *arg)
 
 		}
 
+                #ifdef ENABLE_ANN
 		if (args->f->config->mode == TF_MODE_FLOCK_NN) {
 			for (int i = 0; i < CORE_COUNT; i++) fann_destroy(ann[i]);
 			free(ann);	
 		}
+                #endif
 
 	}
 
@@ -370,6 +379,7 @@ void flock_influence(vec2_t* v, struct flock* f, int boid_id, float max_velocity
 	}
 }
 
+#ifdef ENABLE_ANN
 void flock_influence_nn(vec2_t *v, struct flock *f, int boid_id, float max_velocity, struct fann *ann)
 {
 	flock_gen_sample(f, boid_id);
@@ -407,6 +417,7 @@ void flock_influence_nn(vec2_t *v, struct flock *f, int boid_id, float max_veloc
 
         for (int i = 0; i < 2; i++) (*v)[i] += output[i];
 }
+#endif
 
 void boid_approach(struct flock* f, int boid_id, vec2_t v, float weight)
 {

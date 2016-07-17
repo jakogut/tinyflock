@@ -53,7 +53,11 @@ int print_help()
 		"Modes\n"
 		"------------------------------------------------------------\n"
 		"--flock\t\tSimulate using conventional flocking algorithm\n"
+
+                #ifdef ENABLE_ANN
 		"--flock-nn [network]\t\tSimulate using trained neural network\n\n"
+                #endif
+
 		"--train [input] [output]\t\tTrain neural network from file\n\n"
 
 		"Video configuration\n"
@@ -82,6 +86,7 @@ int print_help()
 		"-fn | --flock-neighborhood\n\tSpecify the size of the neighborhood a boid can see.\n\n"
 		"--capture [filename]\n\tWrite training file\n\n"
 
+                #ifdef ENABLE_ANN
                 "Training configuration\n"
 		"------------------------------------------------------------\n"
                 "--num-epochs\n\t Maximum epochs to train\n\n"
@@ -90,6 +95,7 @@ int print_help()
                 "--network-dim\n\t Dimensions of the neural network\n."
                         "\t\tThe number of neurons per layer is specified as an integer\n"
                         "\t\tLayers are delimited by comma, like so: 3,4,3\n\n"
+                #endif
 	);
 
 	return 0;
@@ -140,7 +146,8 @@ int parse_arguments(int argc, char** argv, struct configuration* config)
 	for(int i = 1; i < argc; i++) {
 		if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
 			return print_help();
-		
+
+                #ifdef ENABLE_ANN
 		if(strcmp(argv[i], "--flock-nn") == 0) {
 			config->mode = TF_MODE_FLOCK_NN;
 			strcpy(config->flock_nn.trained_net, argv[++i]);
@@ -162,6 +169,7 @@ int parse_arguments(int argc, char** argv, struct configuration* config)
                     config->train.desired_error = atof(argv[++i]);
                 if(strcmp(argv[i], "--network-dim") == 0)
                     strcpy(config->train.network_dim, argv[++i]);
+                #endif
 
                 /* Flock options */
 		if(strcmp(argv[i], "--capture") == 0)
@@ -259,6 +267,7 @@ void tf_flock()
 	pthread_join(update_thread, NULL);
 }
 
+#ifdef ENABLE_ANN
 void tf_train()
 {
         if (!strlen(config->train.input)) {
@@ -310,6 +319,7 @@ void tf_train()
 
 	fann_save(ann, config->train.output);
 }
+#endif
 
 int main(int argc, char** argv)
 {
@@ -317,10 +327,12 @@ int main(int argc, char** argv)
 	config = calloc(1, sizeof(configuration));
 	if(!parse_arguments(argc, argv, config)) return 0;
 
+        #ifdef ENABLE_ANN
 	if (config->mode == TF_MODE_TRAIN) {
 		tf_train();
 		return 0;
 	}
+        #endif
 
 	srand(time(NULL));
 

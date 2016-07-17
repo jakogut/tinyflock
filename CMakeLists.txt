@@ -33,7 +33,14 @@ add_executable(
 	${SOURCE_FILES})
 
 add_subdirectory(glfw)
-add_subdirectory(fann)
+
+if(IS_DIRECTORY fann)
+    add_subdirectory(fann)
+    add_definitions(-DENABLE_ANN)
+else(IS_DIRECTORY fann)
+    message(WARNING "FANN not found, disabling ANN features")
+endif(IS_DIRECTORY fann)
+
 
 include_directories(include)
 include_directories(glfw/include)
