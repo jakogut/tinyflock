@@ -37,6 +37,8 @@ add_subdirectory(glfw)
 if(IS_DIRECTORY fann)
     add_subdirectory(fann)
     add_definitions(-DENABLE_ANN)
+    include_directories(fann/src/include)
+    set(FANN_LIBRARIES fann)
 else(IS_DIRECTORY fann)
     message(WARNING "FANN not found, disabling ANN features")
 endif(IS_DIRECTORY fann)
@@ -46,6 +48,6 @@ include_directories(include)
 include_directories(glfw/include)
 include_directories(src)
 
-target_link_libraries(tinyflock glfw fann
+target_link_libraries(tinyflock glfw
 	${GLFW_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${OPENGL_LIBRARIES} ${FANN_LIBRARIES})
 

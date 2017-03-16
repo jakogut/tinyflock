@@ -5,7 +5,10 @@
 #include <pthread.h>
 
 #include <GLFW/glfw3.h>
+
+#ifdef ENABLE_ANN
 #include <fann.h>
+#endif
 
 #include "flock.h"
 #include "render.h"
