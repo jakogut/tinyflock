@@ -8,8 +8,6 @@
 
 #include <GLFW/glfw3.h>
 
-#define TPS_BUFFER_SIZE 5
-
 struct flock* flock_create(struct configuration* config)
 {
 	struct flock* f = calloc(1, sizeof(struct flock));
@@ -64,67 +62,22 @@ static void boid_wrap_coord(struct flock *f, int idx)
 	f->location[idx][1] += sh * (f->location[idx][1] < 0);
 }
 
-void* flock_update_worker_thread(void* arg)
+void flock_update(struct flock *f, float tps_avg)
 {
-	flock_update_worker_args* args = (flock_update_worker_args*)arg;
+	for(int i = 0; i < f->config->flock.size; i++) {
+		// Calculate boid movement
+		float delta = f->config->flock.max_velocity * (60.0 / tps_avg);
+		flock_influence(&f->acceleration[i], f, i, delta);
 
-	int work_size = args->f->config->flock.size / args->f->config->num_threads;
-	int begin_work = work_size * args->thread_id;
+		vec2_add(f->velocity[i], f->acceleration[i]);
+		vec2_add(f->location[i], f->velocity[i]);
 
-	if(args->thread_id == args->f->config->num_threads - 1)
-		work_size += args->f->config->flock.size % args->f->config->num_threads;
-	int end_work = begin_work + work_size;
+		// Reset the acceleration vectors for the flock
+		vec2_zero(f->acceleration[i]);
 
-	long tps_buffer[TPS_BUFFER_SIZE];
-	struct timespec curr_time, new_time;
-	clock_gettime(CLOCK_MONOTONIC, &curr_time);
-
-	while(*args->run) {
-		clock_gettime(CLOCK_MONOTONIC, &new_time);
-		long tick_time_nsec = 	(new_time.tv_nsec - curr_time.tv_nsec) +
-					(1000000000 * (new_time.tv_sec - curr_time.tv_sec));
-		curr_time = new_time;
-
-		long ticks_per_second = 1000000000 / tick_time_nsec;
-
-		for(int i = TPS_BUFFER_SIZE - 1; i != 0; i--) tps_buffer[i] = tps_buffer[i - 1];
-		tps_buffer[0] = ticks_per_second;
-
-		long tps_avg = 0;
-		for(int i = 0; i < TPS_BUFFER_SIZE; i++) tps_avg += tps_buffer[i];
-		tps_avg /= TPS_BUFFER_SIZE;
-		args->ticks[args->thread_id] = tps_avg;
-
-		for(int i = begin_work; i < end_work; i++) {
-			// Calculate boid movement
-			float delta = args->f->config->flock.max_velocity * (60.0 / tps_avg);
-			flock_influence(&args->f->acceleration[i], args->f, i, delta);
-
-			// Handle mouse input
-			switch(*args->cursor_interaction)
-			{
-				case 0: break;
-				case 1: if(vec2_distance(args->f->location[i], *args->cursor_pos) < args->f->config->input.influence_radius)
-						boid_approach(args->f, i, *args->cursor_pos, (INFLUENCE_WEIGHT / tps_avg)); break;
-				case 2: if(vec2_distance(args->f->location[i], *args->cursor_pos) < args->f->config->input.influence_radius)
-						boid_flee(args->f, i, *args->cursor_pos, (INFLUENCE_WEIGHT / tps_avg)); break;
-				default: break;
-			};
-
-			vec2_add(args->f->velocity[i], args->f->acceleration[i]);
-			vec2_add(args->f->location[i], args->f->velocity[i]);
-
-			// Reset the acceleration vectors for the flock
-			vec2_zero(args->f->acceleration[i]);
-
-			// Wrap location coordinates
-			boid_wrap_coord(args->f, i);
-		}
-
-		++(*args->ticks);
+		// Wrap location coordinates
+		boid_wrap_coord(f, i);
 	}
-
-	return NULL;
 }
 
 void flock_influence(vec2_t* v, struct flock* f, int boid_id, float max_velocity)

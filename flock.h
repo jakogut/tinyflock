@@ -23,8 +23,7 @@ void flock_destroy(struct flock* f);
 void flock_randomize_location(struct flock* f);
 void flock_randomize_velocity(struct flock* f);
 
-typedef struct { int* run; int thread_id; long* ticks; struct flock* f; vec2_t* cursor_pos; int* cursor_interaction; } flock_update_worker_args;
-void* flock_update_worker_thread(void* arg);
+void flock_update(struct flock *, float);
 
 void flock_influence(vec2_t* v, struct flock* f, int boid_id, float max_velocity);
 

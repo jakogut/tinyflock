@@ -1,9 +1,9 @@
 CC = clang
 LD = $(CC)
 
-CFLAGS = -Wall -pipe -Iinclude/ -std=gnu11 -march=native
+CFLAGS = -Wall -pipe -Iinclude/ -std=gnu11
 OFLAGS = 
-LFLAGS = -lm -lc -lGL -lglfw -lpthread
+LFLAGS = -lm -lc -lGL -lglfw
 
 SOURCES = $(wildcard *.c)
 OBJECTS = $(SOURCES:.c=.o)
@@ -12,6 +12,13 @@ DEBUG = no
 PROFILE = no
 
 OPTIMIZATION = -O3
+
+OUTPUT = tinyflock
+
+ifeq ($(CC), emcc)
+	LFLAGS += -s LEGACY_GL_EMULATION=1 -s USE_GLFW=3
+	OUTPUT = tinyflock.html
+endif
 
 ifeq ($(DEBUG), yes)
 	CFLAGS += -g -DDEBUG
@@ -27,7 +34,7 @@ CFLAGS += $(OPTIMIZATION)
 all: tinyflock
 
 tinyflock: modules $(OBJECTS)
-	$(LD) $(LFLAGS) $(OBJECTS) -o tinyflock
+	$(LD) $(LFLAGS) $(OBJECTS) -o $(OUTPUT)
 
 modules:
 	git submodule update --init
@@ -36,7 +43,7 @@ modules:
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -rf tinyflock  gmon.out *.save *.o core* vgcore*
+	rm -rf tinyflock  gmon.out *.save *.o core* vgcore* *.html *.js
 
 rebuild: clean all
 

@@ -1,9 +1,6 @@
 #ifndef CONFIGURATION_H_
 #define CONFIGURATION_H_
 
-// Number of worker threads used to update boids
-#define NUM_THREADS 4
-
 // Default video configuration
 #define SCREEN_WIDTH    1280
 #define SCREEN_HEIGHT   720
