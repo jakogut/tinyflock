@@ -9,7 +9,7 @@ void flock_render(GLFWwindow* window, struct flock* f, struct configuration* con
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
 
-	glColor3f(0.0f, 0.0f, 0.0f);
+	glColor4f(0.0f, 0.0f, 0.0f, 1.0f);
 
 	for(int i = 0; i < config->flock.size; i++) {
 		vec2_t normalized_velocity = {f->velocity[i][0], f->velocity[i][1]};
@@ -19,7 +19,7 @@ void flock_render(GLFWwindow* window, struct flock* f, struct configuration* con
 
 		glBegin(GL_LINES);
 			glVertex2f(f->location[i][0], f->location[i][1]);
-			glVertex2f((f->location[i][0] - normalized_velocity[0]), (f->location[i][1] - normalized_velocity[1]));
+			glVertex2f((f->location[i][0] - normalized_velocity[0] / 2), (f->location[i][1] - normalized_velocity[1] / 2));
 		glEnd();
 	}
 

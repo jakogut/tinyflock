@@ -14,20 +14,12 @@
 #define INFLUENCE_WEIGHT 80
 
 // Default boid parameters
-#define NUM_BOIDS 6144
+#define NUM_BOIDS 1024
 
-#define MAX_BOID_VELOCITY 3
-#define MIN_BOID_SEPARATION 10
+#define MAX_BOID_VELOCITY 2
+#define MIN_BOID_SEPARATION 13
 #define MAX_BOID_STEERING_FORCE 0.1
 #define NEIGHBORHOOD_RADIUS 30
-
-#define TF_MODE_FLOCK_CONV 0
-#define TF_MODE_FLOCK_NN 1
-#define TF_MODE_TRAIN 2
-
-#define MAX_EPOCHS 256
-#define REPORT_INTERVAL 4
-#define DESIRED_ERROR 0.005
 
 struct configuration
 {

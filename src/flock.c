@@ -11,11 +11,10 @@
 
 #define TPS_BUFFER_SIZE 5
 
-#ifdef __WIN32
-#define CORE_COUNT omp_get_num_threads()
-#else
-#define CORE_COUNT sysconf(_SC_NPROCESSORS_ONLN)
-#endif
+#define CORE_COUNT 1
+
+static long tps_buffer[TPS_BUFFER_SIZE];
+static struct timespec prev_time, new_time;
 
 struct flock* flock_create(struct configuration* config)
 {
@@ -29,9 +28,6 @@ struct flock* flock_create(struct configuration* config)
 
 	unsigned nthreads = CORE_COUNT;
 
-	f->history = calloc(1, sizeof(struct flock_snapshot));
-	f->history_tail = f->history;
-
 	f->sample.size = f->config->flock.size * 0.0015;
 	f->sample.indices = calloc(sizeof(int*), nthreads);
 	f->sample.distances = calloc(sizeof(float*), nthreads);
@@ -43,6 +39,8 @@ struct flock* flock_create(struct configuration* config)
 
 	flock_randomize_location(f);
 	flock_randomize_velocity(f);
+
+	clock_gettime(CLOCK_MONOTONIC, &prev_time);
 
 	return f;
 }
@@ -62,89 +60,6 @@ void flock_destroy(struct flock* f)
 	free(f->velocity);
 
 	free(f);
-}
-
-void flock_snapshot(struct flock *f, int boid_id, int *sample)
-{
-	f->history_tail->location = malloc(sizeof(vec2_t) * f->sample.size + 1);
-	f->history_tail->velocity = malloc(sizeof(vec2_t) * f->sample.size + 1);
-	f->history_tail->acceleration = malloc(sizeof(vec2_t));
-
-	for (int i = 0; i < f->sample.size + 1; i++) {
-		int src_idx = (i == 0 ? boid_id : sample[i-1]);
-		vec2_copy(f->history_tail->location[i], f->location[src_idx]);
-		vec2_copy(f->history_tail->velocity[i], f->velocity[src_idx]);
-	}
-
-	vec2_copy(f->history_tail->acceleration, f->acceleration[boid_id]);
-
-	f->history_tail->next = calloc(1, sizeof(struct flock_snapshot));
-	f->history_tail = f->history_tail->next;
-}
-
-int write_history(char *filename, struct flock *f)
-{
-	FILE *filp = fopen(filename, "w");
-	if (filp == NULL) return -1;
-
-	struct flock_snapshot *ptr = f->history;
-
-	// There are four inputs per boid, X and Y of location and velocity,
-	// and an additional boid for the target
-	unsigned num_inputs = (((f->sample.size + 1) * 2) * 2);
-	unsigned num_samples = 0;
-
-	while (ptr) {
-		num_samples++;
-		ptr = ptr->next;
-	}
-
-	// Take that last increment off
-	num_samples--;
-
-	printf("\nWriting flock history to FANN training file\n");
-
-	fprintf(filp, "%i %i 2\n", num_samples, num_inputs);
-
-	int idx = 0;
-	int pct_complete = 0;
-
-	int screen_width  = f->config->video.screen_width,
-	    screen_height = f->config->video.screen_height;
-
-	ptr = f->history;
-	while (ptr) {
-		if (!ptr->location || !ptr->velocity || !ptr->acceleration)
-			break;
-
-		for (int i = 0; i < f->sample.size+1; i++) {
-			fprintf(filp, "%.6f ", ((0.5 * screen_width) - ptr->location[i][0]) / screen_width);
-			fprintf(filp, "%.6f ", ((0.5 * screen_height) - ptr->location[i][1]) / screen_height);
-
-			for (int j = 0; j < 2; j++)
-				fprintf(filp, "%.6f ", ptr->velocity[i][j] / f->config->flock.max_velocity);
-		}
-
-		fprintf(filp, "\n");
-
-		for (int i = 0; i < 2; i++)
-			fprintf(filp, "%.6f ", (*ptr->acceleration)[i]);
-
-		fprintf(filp, "\n");
-
-		int new_pct = ((100.0f / num_samples) * idx);
-		if (new_pct != pct_complete) {
-			printf("\r%i percent complete", new_pct);
-			fflush(stdout);
-
-			pct_complete = new_pct;
-		}
-
-		ptr = ptr->next;
-		idx++;
-	}
-
-	fclose(filp);
 }
 
 void flock_randomize_location(struct flock* f)
@@ -176,106 +91,51 @@ static inline void boid_wrap_coord(struct flock *f, int idx)
 	f->location[idx][1] += sh * (f->location[idx][1] < 0);
 }
 
-static long tps_buffer[TPS_BUFFER_SIZE];
-
-void *flock_update(void *arg)
+void flock_update(struct flock *f)
 {
-	struct update_thread_arg *args = (struct update_thread_arg *)arg;
+	clock_gettime(CLOCK_MONOTONIC, &new_time);
+	long tick_time_nsec = 	(new_time.tv_nsec - prev_time.tv_nsec) +
+				(1000000000 * (new_time.tv_sec - prev_time.tv_sec));
 
-	struct timespec curr_time, new_time;
-	clock_gettime(CLOCK_MONOTONIC, &curr_time);
+	prev_time = new_time;
 
-        omp_lock_t snapshot_lock;
-        omp_init_lock(&snapshot_lock);
+	long ticks_per_second = 1000000000 / tick_time_nsec;
 
-        while(*args->run) {
-		clock_gettime(CLOCK_MONOTONIC, &new_time);
-		long tick_time_nsec = 	(new_time.tv_nsec - curr_time.tv_nsec) +
-					(1000000000 * (new_time.tv_sec - curr_time.tv_sec));
+	for(int i = TPS_BUFFER_SIZE - 1; i != 0; i--) tps_buffer[i] = tps_buffer[i - 1];
+	tps_buffer[0] = ticks_per_second;
 
-		curr_time = new_time;
+	unsigned long tps_avg = 0;
+	for(int i = 0; i < TPS_BUFFER_SIZE; i++) tps_avg += tps_buffer[i];
+	tps_avg /= TPS_BUFFER_SIZE;
 
-		long ticks_per_second = 1000000000 / tick_time_nsec;
+	for(int i = 0; i < f->config->flock.size; i++) {
+		// Calculate boid movement
+		float delta = f->config->flock.max_velocity * (60.0 / tps_avg);
 
-		for(int i = TPS_BUFFER_SIZE - 1; i != 0; i--) tps_buffer[i] = tps_buffer[i - 1];
-		tps_buffer[0] = ticks_per_second;
+		flock_influence(&f->acceleration[i], f, i, delta);
+		
+		// Handle mouse input
+		switch(*f->cursor_interaction)
+		{
+			case 0: break;
+			case 1: if(vec2_distance(f->location[i], *f->cursor_pos) < f->config->input.influence_radius)
+					boid_approach(f, i, *f->cursor_pos, (INFLUENCE_WEIGHT / tps_avg)); break;
+			case 2: if(vec2_distance(f->location[i], *f->cursor_pos) < f->config->input.influence_radius)
+					boid_flee(f, i, *f->cursor_pos, (INFLUENCE_WEIGHT / tps_avg)); break;
+			default: break;
+		};
 
-		long tps_avg = 0;
-		for(int i = 0; i < TPS_BUFFER_SIZE; i++) tps_avg += tps_buffer[i];
-		tps_avg /= TPS_BUFFER_SIZE;
-		*args->ticks = tps_avg;
+		vec2_add(f->velocity[i], f->acceleration[i]);
+		vec2_add(f->location[i], f->velocity[i]);
 
-                #ifdef ENABLE_ANN
-		struct fann **ann;
+		// Reset the acceleration vectors for the flock
+		vec2_zero(f->acceleration[i]);
 
-		if (args->f->config->mode == TF_MODE_FLOCK_NN) {
-			ann = (struct fann **)malloc(sizeof(struct ann *) * CORE_COUNT);
-			for (int i = 0; i < CORE_COUNT; i++)
-				ann[i] = fann_create_from_file((const char *)args->f->config->flock_nn.trained_net);
-		}
-                #endif
-
-		#pragma omp parallel for
-		for(int i = 0; i < args->f->config->flock.size; i++) {
-			int tid = omp_get_thread_num();
-
-			// Calculate boid movement
-			float delta = args->f->config->flock.max_velocity * (60.0 / tps_avg);
-
-                        #ifdef ENABLE_ANN
-			if (args->f->config->mode == TF_MODE_FLOCK_CONV)
-				flock_influence(&args->f->acceleration[i], args->f, i, delta);
-			else if (args->f->config->mode == TF_MODE_FLOCK_NN) {
-				flock_influence_nn(&args->f->acceleration[i], args->f, i, delta, ann[tid]);
-			}
-                        #else
-                        flock_influence(&args->f->acceleration[i], args->f, i, delta);
-                        #endif
-			
-			if (strlen(args->f->config->capture_filename)) {
-				omp_set_lock(&snapshot_lock);
-				flock_snapshot(args->f, i, args->f->sample.indices[tid]);
-				omp_unset_lock(&snapshot_lock);
-			}
-
-			// Handle mouse input
-			switch(*args->cursor_interaction)
-			{
-				case 0: break;
-				case 1: if(vec2_distance(args->f->location[i], *args->cursor_pos) < args->f->config->input.influence_radius)
-						boid_approach(args->f, i, *args->cursor_pos, (INFLUENCE_WEIGHT / tps_avg)); break;
-				case 2: if(vec2_distance(args->f->location[i], *args->cursor_pos) < args->f->config->input.influence_radius)
-						boid_flee(args->f, i, *args->cursor_pos, (INFLUENCE_WEIGHT / tps_avg)); break;
-				default: break;
-			};
-
-
-			vec2_add(args->f->velocity[i], args->f->acceleration[i]);
-			vec2_add(args->f->location[i], args->f->velocity[i]);
-
-			// Reset the acceleration vectors for the flock
-			vec2_zero(args->f->acceleration[i]);
-
-			// Wrap location coordinates
-			boid_wrap_coord(args->f, i);
-
-		}
-
-                #ifdef ENABLE_ANN
-		if (args->f->config->mode == TF_MODE_FLOCK_NN) {
-			for (int i = 0; i < CORE_COUNT; i++) fann_destroy(ann[i]);
-			free(ann);	
-		}
-                #endif
+		// Wrap location coordinates
+		boid_wrap_coord(f, i);
 
 	}
-
-	if (strlen(args->f->config->capture_filename)) {
-		int res;
-		res = write_history(args->f->config->capture_filename, args->f);
-	}
-
-	return NULL;
+	
 }
 
 /* This is an interesting bit of code that reduces the problem space of the flocking function dramatically,
@@ -290,7 +150,7 @@ static void flock_gen_sample(struct flock *f, unsigned boid_id)
 	 * and use it as an offset for the starting point of our search for other boids inside our neighborhood.
 	 * This gives us a surprisingly efficient and effective sample generation method */
 
-	unsigned tid = omp_get_thread_num();
+	unsigned tid = 0;
 
 	memset(f->sample.indices[tid],   -1, f->sample.size * sizeof(int));
 	memset(f->sample.distances[tid], -1, f->sample.size * sizeof(float));
@@ -298,7 +158,8 @@ static void flock_gen_sample(struct flock *f, unsigned boid_id)
 	int offset = rand() % f->config->flock.size;
 	for(int i = offset, s = 0; i != (offset - 1) && s < f->sample.size; i++) {
 		// If we reach the end of the flock without filling the queue, loop around
-		if (i == f->config->flock.size) i = 0;
+		if (i == f->config->flock.size)
+			i = 0;
 
 		float distance = vec2_distance_squared(f->location[i], f->location[boid_id]);
 		float nbhd_rad_sqd = powf(f->config->flock.neighborhood_radius, 2);
@@ -324,7 +185,7 @@ void flock_influence(vec2_t* v, struct flock* f, int boid_id, float max_velocity
 	The second population is a total of the boids infringing on the target boid's space.*/
 	int population[2] = {0, 0};
 	float min_bsep_sqd = powf(f->config->flock.min_separation, 2);
-	unsigned tid = omp_get_thread_num();
+	unsigned tid = 0;
 
 	flock_gen_sample(f, boid_id);
 
@@ -378,46 +239,6 @@ void flock_influence(vec2_t* v, struct flock* f, int boid_id, float max_velocity
 		}
 	}
 }
-
-#ifdef ENABLE_ANN
-void flock_influence_nn(vec2_t *v, struct flock *f, int boid_id, float max_velocity, struct fann *ann)
-{
-	flock_gen_sample(f, boid_id);
-	unsigned tid = omp_get_thread_num();
-
-	fann_type *input = calloc(sizeof(fann_type), (f->sample.size+1)*2*2);
-	fann_type *output;
-
-	if (ann == NULL) { 
-		printf("ANN creation failed!\n");
-		return;
-	}
-
-	if (input == NULL) {
-		printf("Failed creating ANN input array!\n");
-		return;
-	}
-
-        int screen_width = f->config->video.screen_width,
-            screen_height = f->config->video.screen_height;
-
-	for (int i = 0; i < f->sample.size+1; i++) {
-		int idx = 0;
-		if (i == 0) idx = boid_id;
-		else idx = f->sample.indices[tid][i-1];
-
-		input[i*4+0] = ((0.5 * screen_width)  - f->location[idx][0]) / screen_width;
-		input[i*4+1] = ((0.5 * screen_height) - f->location[idx][1]) / screen_height;
-
-                for (int j = 0; j < 2; j++) input[(i*4)+(j+2)] = f->velocity[idx][j] / f->config->flock.max_velocity;
-	}
-
-        output = fann_run(ann, input);
-        free(input);
-
-        for (int i = 0; i < 2; i++) (*v)[i] += output[i];
-}
-#endif
 
 void boid_approach(struct flock* f, int boid_id, vec2_t v, float weight)
 {

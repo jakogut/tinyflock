@@ -6,15 +6,15 @@
 
 #include <GLFW/glfw3.h>
 
-#ifdef ENABLE_ANN
-#include <fann.h>
-#endif
-
 #include "flock.h"
 #include "render.h"
 
 #include "events.h"
 #include "configuration.h"
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 
 #define WINDOW_TITLE "tinyflock"
 
@@ -57,12 +57,6 @@ int print_help()
 		"------------------------------------------------------------\n"
 		"--flock\t\tSimulate using conventional flocking algorithm\n"
 
-                #ifdef ENABLE_ANN
-		"--flock-nn [network]\t\tSimulate using trained neural network\n\n"
-                #endif
-
-		"--train [input] [output]\t\tTrain neural network from file\n\n"
-
 		"Video configuration\n"
 		"------------------------------------------------------------\n"
 
@@ -88,17 +82,6 @@ int print_help()
 		"-fv | --flock-velocity\n\tSpecify a maximum velocity a boid can travel.\n\n"
 		"-fn | --flock-neighborhood\n\tSpecify the size of the neighborhood a boid can see.\n\n"
 		"--capture [filename]\n\tWrite training file\n\n"
-
-                #ifdef ENABLE_ANN
-                "Training configuration\n"
-		"------------------------------------------------------------\n"
-                "--num-epochs\n\t Maximum epochs to train\n\n"
-                "--report-interval\n\t Number of epochs between reports\n\n"
-                "--desired-error\n\t The minimum error rate at which to stop training\n\n"
-                "--network-dim\n\t Dimensions of the neural network\n."
-                        "\t\tThe number of neurons per layer is specified as an integer\n"
-                        "\t\tLayers are delimited by comma, like so: 3,4,3\n\n"
-                #endif
 	);
 
 	return 0;
@@ -141,38 +124,10 @@ int parse_arguments(int argc, char** argv, struct configuration* config)
 	config->flock.max_steering_force = MAX_BOID_STEERING_FORCE;
 	config->flock.neighborhood_radius = NEIGHBORHOOD_RADIUS;
 
-        config->train.max_epochs = MAX_EPOCHS;
-        config->train.report_interval = REPORT_INTERVAL;
-        config->train.desired_error = DESIRED_ERROR;
-
 	// Parse arguments
 	for(int i = 1; i < argc; i++) {
 		if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
 			return print_help();
-
-                #ifdef ENABLE_ANN
-		if(strcmp(argv[i], "--flock-nn") == 0) {
-			config->mode = TF_MODE_FLOCK_NN;
-			strcpy(config->flock_nn.trained_net, argv[++i]);
-		}
-
-		if(strcmp(argv[i], "--train") == 0) {
-			config->mode = TF_MODE_TRAIN;
-
-                        if (i < (argc - 1)) strcpy(config->train.input, argv[++i]);
-                        if (i < (argc - 1)) strcpy(config->train.output, argv[++i]);
-		}
-
-                /* Training options */
-                if(strcmp(argv[i], "--max-epochs") == 0)
-                    config->train.max_epochs = atoi(argv[++i]);
-                if(strcmp(argv[i], "--report-interval") == 0)
-                    config->train.report_interval = atoi(argv[++i]);
-                if(strcmp(argv[i], "--desired-error") == 0)
-                    config->train.desired_error = atof(argv[++i]);
-                if(strcmp(argv[i], "--network-dim") == 0)
-                    strcpy(config->train.network_dim, argv[++i]);
-                #endif
 
                 /* Flock options */
 		if(strcmp(argv[i], "--capture") == 0)
@@ -216,12 +171,6 @@ long avg_fps(long frame_time_nsec)
 	return fps_avg / FPS_BUFFER_SIZE;
 }
 
-void print_time_stats(long fps, long tps)
-{
-	printf("\rFrames Per Second: %ld, Ticks Per Second: %ld        ", fps, tps);
-	fflush(stdout);
-}
-
 int run = 1;
 vec2_t cursor_pos;
 int cursor_interaction;
@@ -229,113 +178,19 @@ struct flock* flock_ptr;
 struct configuration* config;
 GLFWwindow *window;
 
-void tf_flock()
+static void tf_tick()
 {
-	long tps = 0;
+	flock_update(flock_ptr);
+	flock_render(window, flock_ptr, config);
+	glfwPollEvents();
 
-	// Create asynchronous update thread
-	pthread_t update_thread;
-
-	struct update_thread_arg update_arg = {
-		.run = &run,
-		.ticks = &tps,
-		.f = flock_ptr,
-
-		.cursor_pos = &cursor_pos,
-		.cursor_interaction = &cursor_interaction
-	};
-
-	pthread_create(&update_thread, NULL, flock_update, (void*)&update_arg);
-
-	struct timespec curr_time, new_time;
-	long frame_time_nsec;
-
-        clock_gettime(CLOCK_MONOTONIC, &curr_time);
-
-	while(run && !glfwWindowShouldClose(window)) {
-		flock_render(window, flock_ptr, config);
-		clock_gettime(CLOCK_MONOTONIC, &new_time);
-
-		frame_time_nsec = 
-			(new_time.tv_nsec - curr_time.tv_nsec) + 
-			(1000000000 * (new_time.tv_sec - curr_time.tv_sec));
-
-		curr_time = new_time;
-
-		print_time_stats(avg_fps(frame_time_nsec), tps);
-
-		glfwPollEvents();
-	}
-
-	pthread_join(update_thread, NULL);
 }
-
-#ifdef ENABLE_ANN
-void tf_train()
-{
-        if (!strlen(config->train.input)) {
-            printf("Input file/path not specified. Exiting.\n");
-            return;;
-        } else if (!strlen(config->train.output)) {
-            printf("Output file/path not specified. Exiting.\n");
-            return;
-        }
-
-	FILE *filp = fopen(config->train.input, "r");
-	if (filp == NULL) return;
-
-	int num_samples, num_input, num_output;
-	fscanf(filp, "%i %i %i", &num_samples, &num_input, &num_output);
-	fclose(filp);
-
-	printf("%i sample(s), %i input(s), %i output(s)\n",
-		num_samples, num_input, num_output);
-
-        /*if (!strlen(config->train.network_dim)) {
-            printf("Network dimensions not specified. Exiting\n");
-            return;
-        }
-
-        int num_layers = parse_network_dim(NULL, config->train.network_dim);
-        int *network_dim = malloc(sizeof(int) * num_layers);
-        parse_network_dim(network_dim, config->train.network_dim);*/
-
-        int num_layers = 5;
-        int network_dim[5] = {num_input, 3, 3, 3, num_output};
-
-        printf("Number of layers: %i Network dim:", num_layers);
-        for (int i = 0; i < num_layers; i++) {
-            char* formatter = (i == (num_layers - 1) ? " %i" : " %i,");
-            printf(formatter, network_dim[i]);
-        }
-
-        printf("\n");
-
-	struct fann *ann = fann_create_standard_array(num_layers, network_dim);
-
-	fann_set_activation_function_hidden(ann, FANN_SIGMOID_SYMMETRIC);
-	fann_set_activation_function_output(ann, FANN_SIGMOID_SYMMETRIC);
-
-	fann_train_on_file(ann, config->train.input, config->train.max_epochs,
-            config->train.report_interval, config->train.desired_error
-        );
-
-	fann_save(ann, config->train.output);
-}
-#endif
 
 int main(int argc, char** argv)
 {
 	// Create a configuration object, and set the values to the defaults
 	config = calloc(1, sizeof(configuration));
 	if(!parse_arguments(argc, argv, config)) return 0;
-
-        #ifdef ENABLE_ANN
-	if (config->mode == TF_MODE_TRAIN) {
-		tf_train();
-		return 0;
-	}
-        #endif
 
 	srand(time(NULL));
 
@@ -369,7 +224,15 @@ int main(int argc, char** argv)
 
 	// Create our flock
 	flock_ptr = flock_create(config);
-	tf_flock();
+	flock_ptr->cursor_pos = &cursor_pos;
+	flock_ptr->cursor_interaction = &cursor_interaction;
+
+#ifdef __EMSCRIPTEN__
+	emscripten_set_main_loop(tf_tick, 60, 1);
+#else
+	while(run && !glfwWindowShouldClose(window))
+		tf_tick();
+#endif
 
 	glfwDestroyWindow(window);
 
